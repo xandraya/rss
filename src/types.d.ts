@@ -1,0 +1,60 @@
+import { IncomingMessage } from "node:http";
+
+export interface Message {
+  short: string,
+  long: {
+    id: number
+    address?: string
+    port?: number
+    family?: string
+    url?: IncomingMessage['url']
+    method?: IncomingMessage['method']
+    headers?: IncomingMessage['headers']
+  }
+}
+
+export interface SystemError {
+  address?: string,
+  code: string,
+  dest?: string,
+  errno: number,
+  info?: string,
+  message: string,
+  path?: string,
+  port?: string,
+  syscall: string,
+}
+
+// JWT
+export type Algorithm = 'HS256' | 'HS384' | 'HS512';
+
+export interface JWTHeader {
+  typ: 'JWT'
+  alg: Algorithm
+}
+
+export interface JWTPayload {
+  iss?: string
+  sub?: string
+  aud?: string | string[]
+  jti?: string
+  nbf?: number
+  exp?: number
+  iat?: number
+  [propName: string]: unknown
+}
+
+export interface JWTInput {
+  header: string
+  payload: string
+  signature: string
+}
+
+// OAUTH
+export interface AuthRequest {
+  response_type: string
+  client_id: string
+  redirect_uri?: string
+  scope?: string
+  state?: string
+}

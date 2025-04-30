@@ -1,0 +1,108 @@
+name: rss
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./app.Dockerfile
+    depends_on:
+      database:
+        restart: true
+        condition: service_healthy
+        required: true
+      cache:
+        restart: true
+        condition: service_started
+        required: true
+    healthcheck:
+      test: curl https://localhost:8080/
+      interval: 5s
+      timeout: 5s
+      start_period: 5s
+      start_interval: 5s
+      retries: 20
+    networks: 
+      - custom
+    ports:
+      - name: api
+        target: 8080
+        host_ip: 127.0.0.1
+        published: "6565"
+        protocol: tcp
+        app_protocol: http
+        mode: ingress
+    restart: "no"
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /app/src
+        - action: sync+restart
+          path: ./key
+          target: /app/key
+        - action: sync+restart
+          path: ./tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync+restart
+          path: ./jest.config.ts
+          target: /app/jest.config.ts
+        - action: sync+restart
+          path: ./.env
+          target: /app/.env
+        - action: rebuild
+          path: package.json
+
+  database:
+    build:
+      context: .
+      dockerfile: database.Dockerfile
+    command: ["postgres", "-c", "port=6566"]
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: server
+    healthcheck:
+      test: pg_isready -h database -p 6566 -d server || exit 1
+      interval: 5s
+      timeout: 5s
+      start_period: 5s
+      start_interval: 5s
+      retries: 20
+    networks: 
+      - custom
+    restart: on-failure:3
+    volumes:
+      - type: volume
+        source: database
+        target: /var/lib/postgresql/data
+
+  cache:
+    command: ["redis-server", "--port", "6567", "--save", "60", "1"]
+    image: redis:alpine
+    networks:
+      - custom
+    restart: on-failure:3
+    volumes:
+      - type: volume
+        source: cache
+        target: /data
+
+#  test:
+#    build:
+#      context: .
+#      dockerfile: ./test.Dockerfile
+#    depends_on:
+#      app:
+#        restart: true
+#        condition: service_healthy
+#        required: true
+#    networks: 
+#      - custom
+#    restart: "no"
+
+volumes:
+  database:
+  cache:
+
+networks:
+  custom:
+    driver: bridge

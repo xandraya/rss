@@ -1,0 +1,28 @@
+{
+  "name": "rss",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "private": true,
+  "scripts": {
+    "test": "npx jest --roots ./test",
+    "s": "npx tsx src/index.ts"
+  },
+  "author": "me:)",
+  "license": "ISC",
+  "description": "backend for an rss/atom feed aggregator",
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.12.7",
+    "@types/pg": "^8.11.5",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "pg": "^8.11.5",
+    "redis": "^4.6.13",
+    "scraper": "file:.temp/scraper",
+    "tsx": "^4.7.3"
+  }
+}
