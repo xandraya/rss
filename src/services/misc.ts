@@ -1,8 +1,6 @@
 import * as crypto from 'node:crypto';
-import * as fs from 'node:fs';
-import JWT from './jwt.ts';
 
-import type { Message } from '../types.d';
+import type { Message, Cookies } from '../types.d';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export function sendMessage(wrkID: number, short: string, req?: IncomingMessage) {
@@ -28,6 +26,37 @@ export function sendMessage(wrkID: number, short: string, req?: IncomingMessage)
   }
 
   else console.log("node.js process didn't spawn with an IPC channel, cannot send messages");
+}
+
+export const encoder = new TextEncoder();
+export const decoder = new TextDecoder();
+export function normalize(input: string | Uint8Array): string {
+  let encoded = input;
+  if (encoded instanceof Uint8Array) {
+    encoded = decoder.decode(encoded);
+  }
+  return encoded;
+}
+export const decodeBASE64 = (input: Uint8Array | string) => new Uint8Array(Buffer.from(normalize(input), 'base64'));
+export const encodeBASE64 = (input: Uint8Array | string) => Buffer.from(input).toString('base64url');
+
+export function parseCookieString(cstring: string): Cookies {
+  if (!cstring) return {};
+  const cookieName = /[!#$%&'*+-.^_`|~0-9A-z]+/;
+  const cookieValue = /"?(\x21|[\x23-\x2B]|[\x2D-\x3A]|[\x3C-\x5B]|[\x5D-\x7E])*"?/;
+  const cookiePair = new RegExp(`${cookieName.source}=${cookieValue.source}`);
+  const cookieString = new RegExp(`^${cookiePair.source}(;\x20${cookiePair.source})?$`);
+  if (!cstring.match(cookieString)) throw new Error('Invalid cookie string');
+
+  let cookies: Cookies = {}; 
+  for (let cookie of cstring.split(' ')) {
+    cookie = cookie.replace(';', '');
+    let { 0: name, 1: value } = cookie.split('=');
+    value = value.replaceAll(/"/g, '');
+    cookies[name] = value;
+  }
+
+  return cookies;
 }
 
 export function printProtoChain<Type extends { __proto__: Object }>(obj: Type | null): void {
@@ -73,23 +102,7 @@ export function escape(str: string) {
 	}).join('').replace(/\s+/g, '%20');
 }
 
-export function initJWT() {
-  const encoder = new TextEncoder();
-
-  const expiry = new Date;
-  expiry.setHours(expiry.getHours()+3);
-  const token = new JWT({ _user: 'user1234' })
-    .setIssuer('me:)')
-    .setAudience('me:)')
-    .setSubject('private')
-    .setIssuedAt()
-    .setExpirationTime(expiry)
-    .setSignature(encoder.encode(process.env._JWT_KEY));
-
-  fs.writeFileSync('./token.txt', token.toString());
-}
-
-export function blockEL(res: ServerResponse) {
+export function blockEL() {
   const start = Date.now();
   while (Date.now() - start < 3000);
 }
@@ -99,16 +112,4 @@ export function blockUV(res: ServerResponse) {
     res.statusCode = 200;
     res.end();
   });
-}
-
-export function parseURIParams(str: string) {
-  if (!str || !str.includes('&')) throw new Error('misc: Invalid query parameter list');
-  const obj: { [key: string]: string } = {};
-  const params = str.split('&');
-  for (let param of params) {
-    let [key, value] = param.split('=');
-    if (!key || !value) throw new Error('misc: Invalid query parameter list');
-    obj[key] = value;
-  }
-  return obj;
 }

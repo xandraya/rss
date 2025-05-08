@@ -70,6 +70,14 @@ export async function initScraper(): Promise<Scraper> {
 }
 
 export async function createTables(client: pg.Client): Promise<undefined> {
-  await client.query(`create table if not exists account (userid varchar(32) constraint pk_userid primary key, username varchar(32), \
-\ \ email varchar(64), password varchar(32), salt varchar(64))`);
+  await client.query(`create table if not exists account (userid varchar(16) constraint pk_userid primary key, username varchar(32), \
+\ \ email varchar(64), password varchar(64), salt varchar(32))`);
+    /*
+  await client.query(`create table if not exists folder (folderid varchar(16) constraint pk_folderid primary key, \
+\ \ foreign key (userid) references account(userid) on delete cascade, name varchar(32))`);
+  */
+}
+
+export async function dropTables(client: pg.Client): Promise<undefined> {
+  await client.query(`drop table account, folder`);
 }

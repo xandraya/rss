@@ -7,6 +7,7 @@ import { handle404, handle500 } from './services/error';
 
 import * as login from './auth/local/login';
 import * as register from './auth/local/register';
+import * as secret from './api/secret';
 
 import type { SystemError } from './types.d';
 
@@ -107,8 +108,11 @@ export default async function initServer(wrkID: number) {
       const paramIndex = req.url!.indexOf('?');
       switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
         // auth
-        case '/auth/local/login': await login.handle(req, res, clientPg, clientRedis); break;
+        case '/auth/local/login': await login.handle(req, res, clientPg); break;
         case '/auth/local/register': await register.handle(req, res, clientPg); break;
+
+        // api
+        case '/api/secret': await secret.handle(req, res, clientPg, clientRedis); break;
 
         // ROOT
         case '/':

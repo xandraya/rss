@@ -48,7 +48,3 @@ if (cluster.isPrimary) {
 } else {
   if (cluster.worker && cluster.worker.id) initServer(cluster.worker.id);
 }
-
-/* todo:
- * test pg and redis concurency
-*/

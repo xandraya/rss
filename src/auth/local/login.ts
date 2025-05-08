@@ -1,40 +1,61 @@
-import { handle405, handle501 } from '../../services/error.ts';
+import { handle302, handle307, handle400, handle401, handle403, handle405 } from '../../services/error';
+import httpBasicAuth from '../../services/basic';
+import JWT from '../../services/jwt';
+import { encoder, parseCookieString } from '../../services/misc';
+import verifySession from '../../services/session';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
-const template = `
-<h1>Login</h1>
-<form action='/login' method='POST'>
-  <div>
-    <label for='user'>User</label>
-    <input type='text' id='user' name='user' required />
-  </div>
-  <div>
-    <label for='pass'>Pass</label>
-    <input type='password' id='pass' name='pass' required />
-  </div>
-  <button type='submit'>Login</button>
-</form>
-`
-
-async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRedis: any) {
-  res.statusCode = 200;
-  res.end(template);
-}
-
-async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRedis: any) {
-  handle501(res);
-}
-
-export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRedis: any): Promise<number> {
-  res.strictContentLength = true;
-
-  switch (req.method) {
-    case 'GET': await handleGET(req, res, clientPg, clientRedis); break;
-    case 'POST': await handlePOST(req, res, clientPg, clientRedis); break;
-    default: handle405(res);
+async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Client) {
+  try {
+    var username = await httpBasicAuth(req, clientPg);
+  } catch (e: any) {
+    switch (e.message) {
+      case '400':
+        return handle400(res, e.cause);
+      case '401':
+        return handle401(res, e.cause);
+      case '403':
+        return handle403(res, e.cause);
+      default:
+        return handle400(res, 'Unknown error');
+    }
   }
 
-  return 0;
+  const expiry = new Date;
+  expiry.setHours(expiry.getHours()+48);
+  const token = new JWT({ _username: username })
+    .setIssuer('localhost')
+    .setAudience('client')
+    .setSubject('session')
+    .setIssuedAt()
+    .setExpirationTime(expiry)
+    .setSignature(encoder.encode(process.env._JWT_KEY));
+
+  try {
+    var cookies = parseCookieString(req.headers.cookie || '');
+  } catch(e: any) {
+    return handle400(res, 'Malformed cookie string');
+  }
+
+  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Domain=${process.env.HOST}; Path=/; Max-Age=3600; SameSite=Strict`)
+  handle302(res, `https://${process.env.HOST}:${process.env.PORT}${cookies._referer || '/'}`, '');
+  return;
+}
+
+export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client): Promise<void> {
+  res.strictContentLength = true;
+  try {
+    const username = await verifySession(req, clientPg);
+    if (username)
+      return handle307(res, `https://${process.env.HOST}:${process.env.PORT}/`, req.url || '/');
+  } catch(e: any) {
+    return handle400(res, e.toString());
+  }
+
+  switch (req.method) {
+    case 'GET': await handleGET(req, res, clientPg); break;
+    default: handle405(res);
+  }
 }

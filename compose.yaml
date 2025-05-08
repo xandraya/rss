@@ -14,13 +14,13 @@ services:
         restart: true
         condition: service_started
         required: true
-    healthcheck:
-      test: curl https://localhost:8080/
-      interval: 5s
-      timeout: 5s
-      start_period: 5s
-      start_interval: 5s
-      retries: 20
+#    healthcheck:
+#      test: wget --ca-certificate /app/key/cert.pem https://localhost:8080/
+#      interval: 5s
+#      timeout: 5s
+#      start_period: 5s
+#      start_interval: 5s
+#      retries: 20
     networks: 
       - custom
     ports:
@@ -34,19 +34,16 @@ services:
     restart: "no"
     develop:
       watch:
-        - action: sync+restart
+        - action: rebuild
           path: ./src
           target: /app/src
-        - action: sync+restart
+        - action: rebuild
           path: ./key
           target: /app/key
-        - action: sync+restart
+        - action: rebuild
           path: ./tsconfig.json
           target: /app/tsconfig.json
-        - action: sync+restart
-          path: ./jest.config.ts
-          target: /app/jest.config.ts
-        - action: sync+restart
+        - action: rebuild
           path: ./.env
           target: /app/.env
         - action: rebuild
@@ -86,18 +83,37 @@ services:
         source: cache
         target: /data
 
-#  test:
-#    build:
-#      context: .
-#      dockerfile: ./test.Dockerfile
-#    depends_on:
-#      app:
-#        restart: true
-#        condition: service_healthy
-#        required: true
-#    networks: 
-#      - custom
-#    restart: "no"
+  test:
+    build:
+      context: .
+      dockerfile: ./test.Dockerfile
+    depends_on:
+      app:
+        restart: true
+        condition: service_started
+        required: true
+    networks: 
+      - custom
+    restart: "no"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src
+          target: /app/src
+        - action: rebuild
+          path: ./key
+          target: /app/key
+        - action: rebuild
+          path: ./tsconfig.json
+          target: /app/tsconfig.json
+        - action: rebuild
+          path: ./jest.config.ts
+          target: /app/jest.config.ts
+        - action: rebuild
+          path: ./.env
+          target: /app/.env
+        - action: rebuild
+          path: package.json
 
 volumes:
   database:

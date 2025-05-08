@@ -25,6 +25,13 @@ export interface SystemError {
   syscall: string,
 }
 
+export type Cookies = { [name?: string]: string }
+
+export interface NodeErrorConstructor extends ErrorConstructor {
+    new (message?: string, options?: { cause: string }): Error;
+    (message?: string, options?: { cause: string} ): Error;
+}
+
 // JWT
 export type Algorithm = 'HS256' | 'HS384' | 'HS512';
 

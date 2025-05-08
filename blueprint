@@ -66,6 +66,8 @@
  * check js api:
   - AbortSignal
   - Buffer
+ * test pg and redis concurency?
  * change nodejs default cyphers
  * recheck passport auth flow
+ * initialize postgres with default user for testing
 */

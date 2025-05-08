@@ -1,21 +1,8 @@
 import * as crypto from 'node:crypto';
+import { encoder, decoder, decodeBASE64, encodeBASE64 } from './misc';
 
 import type { JWTHeader, JWTPayload, JWTInput, Algorithm } from '../types.d';
 import type * as pg from 'pg';
-
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
-function normalize(input: string | Uint8Array): string {
-  let encoded = input;
-  if (encoded instanceof Uint8Array) {
-    encoded = decoder.decode(encoded);
-  }
-  return encoded;
-}
-
-const encodeBASE64 = (input: Uint8Array | string) => Buffer.from(input).toString('base64url');
-const decodeBASE64 = (input: Uint8Array | string) => new Uint8Array(Buffer.from(normalize(input), 'base64'));
 
 function concatBuffers(...buffers: Uint8Array[]): Uint8Array {
   const size = buffers.reduce((acc, { length }) => acc + length, 0);
@@ -38,7 +25,6 @@ class JWTError extends Error {
   }
 }
 
-// Conforms to RFC 7519
 export default class JWT {
   private _header: JWTHeader;
   private _payload: JWTPayload;
@@ -198,8 +184,8 @@ export default class JWT {
       for (let i=0; i<expClaims.length; i++) {
         if (expClaims[i][1] !== actClaims[i][1]) throw new JWTError('insufficient_scope', 'Private claims verification failed');
 
-        if (expClaims[i][0] === '_user')
-          await client.query(`select * from account where "user" = '${actClaims[i][1]}'`).then(r => {
+        if (expClaims[i][0] === '_username')
+          await client.query(`select * from account where "username" = '${actClaims[i][1]}'`).then(r => {
             if (!r.rows.length) throw new JWTError('insufficient_scope', 'User not found');
           });
       }

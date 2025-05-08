@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "private": true,
   "scripts": {
-    "test": "npx jest --roots ./test",
+    "test": "npx jest --roots ./test --detectOpenHandles",
     "s": "npx tsx src/index.ts"
   },
   "author": "me:)",
