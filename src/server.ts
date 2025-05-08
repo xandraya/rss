@@ -11,10 +11,15 @@ import * as register from './auth/local/register';
 import type { SystemError } from './types.d';
 
 export default async function initServer(wrkID: number) {
-  const tlsSessionStore = new Map<string, Buffer>();
+  if (!process.env._JWT_KEY) throw new Error('JWT Key not initialized');
+  if (!process.env.HOST) throw new Error('Hostname not initialized');
+  if (!process.env.PORT) throw new Error('Global port not initialized');
+
+  //const tlsSessionStore = new Map<string, Buffer>();
   const clientPg = await db.initPg();
   const clientRedis = await db.initRedis();
   //const scraper = await db.initScraper();
+  //await db.dropTables(clientPg);
   await db.createTables(clientPg);
 
   const serverOptions = Object.freeze({
@@ -33,14 +38,14 @@ export default async function initServer(wrkID: number) {
 
     // tls.createSecureContext
     key: fs.readFileSync('./key/key.pem'),
-    cert: fs.readFileSync('./key/pub.pem'),
+    cert: fs.readFileSync('./key/cert.pem'),
     passphrase: 'foobar',
     minVersion: 'TLSv1.2',
     maxVersion: 'TLSv1.3',
   });
 
   const listenOptions = Object.freeze({
-    host: '0.0.0.0',
+    //host: '0.0.0.0',
     port: 8080,
     //exclusive: true,
   });
@@ -92,7 +97,7 @@ export default async function initServer(wrkID: number) {
   */
 
   server.on('secureConnection', (socket) => {
-    //sendMessage(wrkID, 'TLS handshake completed');
+    sendMessage(wrkID, 'TLS handshake completed');
   })
 
   server.on('request', async (req, res) => {
@@ -101,7 +106,7 @@ export default async function initServer(wrkID: number) {
     try {
       const paramIndex = req.url!.indexOf('?');
       switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
-        // custom
+        // auth
         case '/auth/local/login': await login.handle(req, res, clientPg, clientRedis); break;
         case '/auth/local/register': await register.handle(req, res, clientPg); break;
 
@@ -113,9 +118,7 @@ export default async function initServer(wrkID: number) {
         default: handle404(res);
       }
     } catch(err: any) {
-      handle500(res);
-      server.close();
-      process.exit(1);
+      handle500(res, err);
     }
   });
 
