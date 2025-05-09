@@ -38,8 +38,8 @@ export default async function initServer(wrkID: number) {
     //ticketKeys: null, // session resume?
 
     // tls.createSecureContext
-    key: fs.readFileSync('./key/key.pem'),
-    cert: fs.readFileSync('./key/cert.pem'),
+    key: fs.readFileSync('./key/serverkey.pem'),
+    cert: fs.readFileSync('./key/servercert.pem'),
     passphrase: 'foobar',
     minVersion: 'TLSv1.2',
     maxVersion: 'TLSv1.3',
