@@ -69,15 +69,13 @@ export async function initScraper(): Promise<Scraper> {
   return scraper;
 }
 
-export async function createTables(client: pg.Client): Promise<undefined> {
-  await client.query(`create table if not exists account (userid varchar(16) constraint pk_userid primary key, username varchar(32), \
+export async function createTables(client: pg.Client, test?: boolean): Promise<undefined> {
+  await client.query(`create table if not exists account${test ? '_test' : ''} (userid varchar(16) constraint pk_userid${test ? '_test' : ''} primary key, username varchar(32), \
 \ \ email varchar(64), password varchar(64), salt varchar(32))`);
-    /*
-  await client.query(`create table if not exists folder (folderid varchar(16) constraint pk_folderid primary key, \
-\ \ foreign key (userid) references account(userid) on delete cascade, name varchar(32))`);
-  */
+  await client.query(`create table if not exists folder${test ? '_test' : ''} (folderid varchar(16) constraint pk_folderid${test ? '_test' : ''} primary key, \
+\ \ userid varchar(16) references account${test ? '_test' : ''}(userid) on delete cascade, name varchar(32))`);
 }
 
-export async function dropTables(client: pg.Client): Promise<undefined> {
-  await client.query(`drop table account, folder`);
+export async function dropTables(client: pg.Client, test?: boolean): Promise<undefined> {
+  await client.query(`drop table account${test ? '_test' : ''}, folder${test ? '_test' : ''}`);
 }

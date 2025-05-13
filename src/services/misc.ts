@@ -1,4 +1,5 @@
 import * as crypto from 'node:crypto';
+import { promisify } from 'node:util';
 
 import type { Message, Cookies } from '../types.d';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -28,6 +29,7 @@ export function sendMessage(wrkID: number, short: string, req?: IncomingMessage)
   else console.log("node.js process didn't spawn with an IPC channel, cannot send messages");
 }
 
+export const random = async (num: number) => await promisify(crypto.randomBytes)(num).then(r => (r as Buffer).toString('hex'));
 export const encoder = new TextEncoder();
 export const decoder = new TextDecoder();
 export function normalize(input: string | Uint8Array): string {

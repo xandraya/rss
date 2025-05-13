@@ -113,6 +113,9 @@ services:
           path: ./.env
           target: /app/.env
         - action: rebuild
+          path: ./test
+          target: /app/test
+        - action: rebuild
           path: package.json
 
 volumes:

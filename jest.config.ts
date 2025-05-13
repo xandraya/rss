@@ -5,6 +5,8 @@ const jestConfig: JestConfigWithTsJest = {
   clearMocks: true,
   coverageProvider: "v8",
   preset: "ts-jest",
+  globalSetup: './test/services/setup.ts',
+  globalTeardown: './test/services/teardown.ts',
   transform: {
     '^.+\\.tsx?$': [
       "ts-jest",

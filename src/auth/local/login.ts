@@ -9,7 +9,7 @@ import type { Client } from 'pg';
 
 async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Client) {
   try {
-    var username = await httpBasicAuth(req, clientPg);
+    var userid = await httpBasicAuth(req, clientPg);
   } catch (e: any) {
     switch (e.message) {
       case '400':
@@ -25,7 +25,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
 
   const expiry = new Date;
   expiry.setHours(expiry.getHours()+48);
-  const token = new JWT({ _username: username })
+  const token = new JWT({ _userid: userid })
     .setIssuer('localhost')
     .setAudience('client')
     .setSubject('session')
@@ -47,11 +47,11 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
 export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client): Promise<void> {
   res.strictContentLength = true;
   try {
-    const username = await verifySession(req, clientPg);
-    if (username)
+    const userid = await verifySession(req, clientPg);
+    if (userid)
       return handle307(res, `https://${process.env.HOST}:${process.env.PORT}/`, req.url || '/');
   } catch(e: any) {
-    return handle400(res, e.toString());
+    return handle400(res, e.message);
   }
 
   switch (req.method) {

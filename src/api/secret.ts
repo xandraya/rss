@@ -29,11 +29,11 @@ export async function handleGET(req: IncomingMessage, res: ServerResponse, clien
 export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRedis: any): Promise<void> {
   res.strictContentLength = true;
   try {
-    const username = await verifySession(req, clientPg);
-    if (!username)
+    const userid = await verifySession(req, clientPg);
+    if (!userid)
       return handle302(res, `https://${process.env.HOST}:${process.env.PORT}/auth/local/login`, req.url || '/');
   } catch(e: any) {
-    handle400(res, e.toString());
+    return handle400(res, e.message);
   }
 
   switch (req.method) {

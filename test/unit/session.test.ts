@@ -36,11 +36,11 @@ describe('verifySession', () => {
     const res = {};
     const req = {
       headers: {
-        cookie: `_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcm5hbWUiOiJmb29iYXIiLCJpc3MiOiJsb2NhbGhvc3QiLCJhdWQiOiJjbGllbnQiLCJzdWIiOiJzZXNzaW9uIiwiaWF0IjoxNzQ2NjkzMTEyLCJleHAiOjE3NDY4NjU5MTJ9.lwrmtiFaJM0Z_93qQkJf-pNZ5aa1lD88ExG5KOCNF4o"`
+        cookie: `_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiN2Y2NWY2YTRmNGIxYzVmNyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDcxMjA5ODYsImV4cCI6MTc0NzI5Mzc4Nn0.fH3wJdEo_HJ7W1gmggi4v-hCblPJLKM71cno-joZ-to"`
       }
     }
   
-    await expect(verifySession(req as IncomingMessage, clientPg)).resolves.toBe('foobar');
+    await expect(verifySession(req as IncomingMessage, clientPg)).resolves.toBe('7f65f6a4f4b1c5f7');
   });
 });
 

@@ -24,14 +24,14 @@ export default async function verifySession(req: IncomingMessage, clientPg: pg.C
     }
 
     try {
-      await new JWT({ _user: parsedPayload._username })
+      await new JWT({ _user: parsedPayload._userid })
         .setIssuer('localhost')
         .setAudience('client')
         .setSubject('session')
         .setIssuedAt()
         .setSignature(encoder.encode(process.env._JWT_KEY))
         .verify(cookies._session, encoder.encode(process.env._JWT_KEY), clientPg);
-      return parsedPayload._username as string;
+      return parsedPayload._userid as string;
     } catch(err: any) {
       console.log('Signature verification failed for user: ', parsedPayload._username);
     }

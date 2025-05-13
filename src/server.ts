@@ -8,6 +8,7 @@ import { handle404, handle500 } from './services/error';
 import * as login from './auth/local/login';
 import * as register from './auth/local/register';
 import * as secret from './api/secret';
+import * as folder from './api/add/folder';
 
 import type { SystemError } from './types.d';
 
@@ -113,6 +114,7 @@ export default async function initServer(wrkID: number) {
 
         // api
         case '/api/secret': await secret.handle(req, res, clientPg, clientRedis); break;
+        case '/api/add/folder': await folder.handle(req, res, clientPg, clientRedis); break;
 
         // ROOT
         case '/':

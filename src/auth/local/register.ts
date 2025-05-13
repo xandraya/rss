@@ -2,6 +2,7 @@ import * as crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import { URL } from 'node:url';
 import { handle400, handle405 } from '../../services/error';
+import { random } from '../../services/misc';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
@@ -34,7 +35,6 @@ async function handleGET(res: ServerResponse) {
 }
 
 async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Client) {
-  const random = async (num: number) => await promisify(crypto.randomBytes)(num).then(r => (r as Buffer).toString('hex'));
   const scrypt = promisify(crypto.scrypt);
   if (req.headersDistinct.encoding && req.headersDistinct.encoding[0] !== 'application/x-www-form-urlencoded') { handle400(res, 'Invalid encoding'); return; }
 
@@ -51,7 +51,8 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Cli
   if (!username.match(/^[a-zA-Z0-9_]{4,32}$/)) return handle400(res, "Username invalid");
   if (!password.match(/^.{8,32}$/)) return handle400(res, "Password invalid");
   if (!email.match(emailRegex)) return handle400(res, "E-mail invalid");
-  // ^ not validating does the email actually exist
+  if (await client.query(`select from acount where email = '${email}'`).then(r => r.rows.length !== 0))
+    return handle400(res, "Account with this e-mail already exists");
 
   let userid = await random(8);
   while (await client.query(`select from account where userid = '${userid}'`).then(r => r.rows.length !== 0))
