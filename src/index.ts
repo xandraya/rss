@@ -7,7 +7,7 @@ import initServer from './server';
 
 import type { Message } from './types.d';
 
-const CLUSTER_COUNT = process.env._WORKER_COUNT ? Number(process.env._WORKER_COUNT) : require('node:os').availableParallelism() as number;
+export const CLUSTER_COUNT = process.env._WORKER_COUNT ? Number(process.env._WORKER_COUNT) : require('node:os').availableParallelism() as number;
 const encoder = new TextEncoder();
 
 if (cluster.isPrimary) {
@@ -18,7 +18,8 @@ if (cluster.isPrimary) {
   fs.mkdir('./logs', { recursive: true }, (err) => {
     if (err) throw new Error('MKDIR FAILED');
 
-    for (let i=0; i<CLUSTER_COUNT; i++) {
+    // initializes extra worker for testing
+    for (let i=0; i<CLUSTER_COUNT+1; i++) {
 
       const fd = fs.openSync(`./logs/wrk${i+1}.log`, 'w');
       const worker = cluster.fork();

@@ -1,6 +1,7 @@
 import * as https from 'node:https';
 import * as fs from 'node:fs';
 
+import { CLUSTER_COUNT } from './index';
 import * as db from './services/db';
 import { sendMessage } from './services/misc';
 import { handle404, handle500 } from './services/error';
@@ -18,9 +19,9 @@ export default async function initServer(wrkID: number) {
   if (!process.env.PORT) throw new Error('Global port not initialized');
 
   //const tlsSessionStore = new Map<string, Buffer>();
-  const clientPg = await db.initPg();
+  const clientPg = wrkID === CLUSTER_COUNT+1 ? await db.initPg('test') : await db.initPg('server');
   const clientRedis = await db.initRedis();
-  //const scraper = await db.initScraper();
+  //const client = await db.initHTTPClient();
   //await db.dropTables(clientPg);
   await db.createTables(clientPg);
 
@@ -48,7 +49,7 @@ export default async function initServer(wrkID: number) {
 
   const listenOptions = Object.freeze({
     //host: '0.0.0.0',
-    port: 8080,
+    port: wrkID === CLUSTER_COUNT+1 ? 8081 : 8080,
     //exclusive: true,
   });
 
@@ -114,7 +115,7 @@ export default async function initServer(wrkID: number) {
 
         // api
         case '/api/secret': await secret.handle(req, res, clientPg, clientRedis); break;
-        case '/api/add/folder': await folder.handle(req, res, clientPg, clientRedis); break;
+        case '/api/add/folder': await folder.handle(req, res, clientPg); break;
 
         // ROOT
         case '/':

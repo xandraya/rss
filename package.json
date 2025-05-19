@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "test": "npx jest --roots ./test --detectOpenHandles",
-    "s": "npx tsx src/index.ts"
+    "start": "npx tsx src/index.ts"
   },
   "author": "me:)",
   "license": "ISC",
@@ -19,10 +19,10 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
+    "76a01a3490137f87": "github:xandraya/76a01a3490137f87",
     "dotenv": "^16.5.0",
     "pg": "^8.11.5",
     "redis": "^4.6.13",
-    "scraper": "file:.temp/scraper",
     "tsx": "^4.7.3"
   }
 }

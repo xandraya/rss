@@ -24,7 +24,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
   }
 
   const expiry = new Date;
-  expiry.setHours(expiry.getHours()+48);
+  expiry.setMonth(expiry.getMonth()+24);
   const token = new JWT({ _userid: userid })
     .setIssuer('localhost')
     .setAudience('client')

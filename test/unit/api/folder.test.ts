@@ -3,9 +3,9 @@ import * as fs from 'node:fs';
 
 const options = {
   hostname: 'app',
-  port: 8080,
+  port: 8081,
   headers: {
-    'Cookie': '_test="true"; _session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiN2Y2NWY2YTRmNGIxYzVmNyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDcxMjA5ODYsImV4cCI6MTc0NzI5Mzc4Nn0.fH3wJdEo_HJ7W1gmggi4v-hCblPJLKM71cno-joZ-to"',
+    'Cookie': '_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiYWRmOGMyZWUwNTBiMjE3MyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDc2NDU3MjgsImV4cCI6MTgxMDcxNzcyOH0.yz2GqqSA1f9TbWIW54c7qPydqWS5AqZCsUmQOq2jjow"',
   },
   method: 'POST',
   protocol: 'https:',

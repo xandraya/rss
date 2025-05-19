@@ -1,6 +1,6 @@
 import * as pg from 'pg';
 import * as redis from 'redis';
-import Scraper from 'scraper';
+import HTTPClient from '76a01a3490137f87';
 
 let CACHE_ENABLED = process.env._CACHE_ENABLED || true;
 
@@ -27,8 +27,8 @@ const configRedis: redis.RedisClientOptions<redis.RedisModules, redis.RedisFunct
   readonly: false,
 });
 
-export async function initPg(): Promise<pg.Client> {
-	const client = new pg.Client({ ...configPg, database: "server" });
+export async function initPg(database: string): Promise<pg.Client> {
+	const client = new pg.Client({ ...configPg, database });
 	await client.connect();
 
 	client.on('error', err => {
@@ -62,20 +62,20 @@ export async function initRedis() {
   return client;
 }
 
-export async function initScraper(): Promise<Scraper> {
-  const scraper = new Scraper({ debug: 2, pgOptions: { ...configPg, database: "scraper" }  });
-  await scraper.bootup();
+export async function initHTTPClient(): Promise<HTTPClient> {
+  const client = new HTTPClient({ debug: 2, pgOptions: { ...configPg, database: "http_client" }  });
+  await client.bootup();
 
-  return scraper;
+  return client;
 }
 
-export async function createTables(client: pg.Client, test?: boolean): Promise<undefined> {
-  await client.query(`create table if not exists account${test ? '_test' : ''} (userid varchar(16) constraint pk_userid${test ? '_test' : ''} primary key, username varchar(32), \
+export async function createTables(client: pg.Client): Promise<undefined> {
+  await client.query(`create table if not exists account (userid varchar(16) constraint pk_userid primary key, username varchar(32), \
 \ \ email varchar(64), password varchar(64), salt varchar(32))`);
-  await client.query(`create table if not exists folder${test ? '_test' : ''} (folderid varchar(16) constraint pk_folderid${test ? '_test' : ''} primary key, \
-\ \ userid varchar(16) references account${test ? '_test' : ''}(userid) on delete cascade, name varchar(32))`);
+  await client.query(`create table if not exists folder (folderid varchar(16) constraint pk_folderid primary key, \
+\ \ userid varchar(16) references account(userid) on delete cascade, name varchar(32))`);
 }
 
-export async function dropTables(client: pg.Client, test?: boolean): Promise<undefined> {
-  await client.query(`drop table account${test ? '_test' : ''}, folder${test ? '_test' : ''}`);
+export async function dropTables(client: pg.Client): Promise<undefined> {
+  await client.query(`drop table account, folder`);
 }

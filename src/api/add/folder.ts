@@ -1,16 +1,11 @@
 import { handle302, handle400, handle405 } from '../../services/error';
 import verifySession from '../../services/session';
-import { random, parseCookieString } from '../../services/misc';
+import { random } from '../../services/misc';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
-type Opts = {
-  test?: boolean,
-  userid: string,
-}
-
-async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRedis: any, opts: Opts) {
+async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPg: Client, userid: string) {
   req.setEncoding('utf8')
   {
     let data: string = '';
@@ -23,19 +18,19 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPg: C
     }
   }
 
-  if (await clientPg.query(`select * from folder${opts.test ? '_test' : ''} where name = '${serialized.name}'`).then(r => r.rows.length !== 0))
+  if (await clientPg.query(`select * from folder where name = '${serialized.name}'`).then(r => r.rows.length !== 0))
     return handle400(res, 'Folder name already exists');
 
   let folderid = await random(8);
-  while (await clientPg.query(`select from folder${opts.test ? '_test' : ''} where folderid = '${folderid}'`).then(r => r.rows.length !== 0))
-    opts.userid = (parseInt(opts.userid, 16)+1).toString(16);
-  await clientPg.query(`insert into folder${opts.test ? '_test' : ''}(folderid, userid, name) values ('${folderid}', '${opts.userid}', '${serialized.name}')`);
+  while (await clientPg.query(`select from folder where folderid = '${folderid}'`).then(r => r.rows.length !== 0))
+    userid = (parseInt(userid, 16)+1).toString(16);
+  await clientPg.query(`insert into folder(folderid, userid, name) values ('${folderid}', '${userid}', '${serialized.name}')`);
 
   res.statusCode = 201;
   res.end();
 }
 
-export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRedis: any): Promise<void> {
+export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client): Promise<void> {
   res.strictContentLength = true;
   try {
     var userid = await verifySession(req, clientPg);
@@ -45,11 +40,9 @@ export async function handle(req: IncomingMessage, res: ServerResponse, clientPg
     return handle400(res, e.message);
   }
 
-  const test = (parseCookieString(req.headers.cookie || ''))._test ? true : false;
-
   switch (req.method) {
     case 'GET': break;
-    case 'POST': handlePOST(req, res, clientPg, clientRedis, { userid, test }); break;
+    case 'POST': handlePOST(req, res, clientPg, userid); break;
     default: handle405(res);
   }
 }

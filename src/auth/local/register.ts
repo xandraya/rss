@@ -51,7 +51,7 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Cli
   if (!username.match(/^[a-zA-Z0-9_]{4,32}$/)) return handle400(res, "Username invalid");
   if (!password.match(/^.{8,32}$/)) return handle400(res, "Password invalid");
   if (!email.match(emailRegex)) return handle400(res, "E-mail invalid");
-  if (await client.query(`select from acount where email = '${email}'`).then(r => r.rows.length !== 0))
+  if (await client.query(`select from account where email = '${email}'`).then(r => r.rows.length !== 0))
     return handle400(res, "Account with this e-mail already exists");
 
   let userid = await random(8);

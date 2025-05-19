@@ -1,10 +1,11 @@
 import { initPg, createTables } from './db';
 
 module.exports = async () => {
-  const clientPg = await initPg();
-  await createTables(clientPg, true);
-  await clientPg.query(`insert into account_test (userid, username, email, password, salt)\
-\ \ values ('7f65f6a4f4b1c5f7', 'foobar', 'foobar@example.com',\
-\ \ 'a58be3b25377434441df1e00303c666d8575797032af470f054945dea138ce6a', 'd0a7fbb7ce83eaba768cd464d7cb55e9')`);
-  await clientPg.query(`insert into folder_test (folderid, userid, name) values ('2b9d34170d53c39a', '7f65f6a4f4b1c5f7', 'existingfolder')`);
+  const clientPg = await initPg('test');
+  await createTables(clientPg);
+  await clientPg.query(`insert into account (userid, username, email, password, salt)\
+\ \ values ('adf8c2ee050b2173', 'foobar', 'foobar@example.com',\
+\ \ '146ac20e1a62c07bc57d7ce563a9d27f0e67d81d50463b0edda7ca00c6e75d3d', 'f9f087de76da49429146dedf3fb59342')`);
+  await clientPg.query(`insert into folder (folderid, userid, name) values ('2b9d34170d53c39a', 'adf8c2ee050b2173', 'existingfolder')`);
+  await clientPg.end();
 }
