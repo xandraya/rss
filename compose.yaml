@@ -15,7 +15,7 @@ services:
         condition: service_started
         required: true
     healthcheck:
-      test: netstat -nl | grep -v grep | grep :::8081
+      test: netstat -nl | grep -v grep | grep :::8082
       interval: 5s
       timeout: 5s
       start_period: 5s

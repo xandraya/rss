@@ -53,7 +53,8 @@ export function parseCookieString(cstring: string): Cookies {
   let cookies: Cookies = {}; 
   for (let cookie of cstring.split(' ')) {
     cookie = cookie.replace(';', '');
-    let { 0: name, 1: value } = cookie.split('=');
+    let name = cookie.slice(0, cookie.search('='));
+    let value = cookie.slice(cookie.search('=')+1);
     value = value.replaceAll(/"/g, '');
     cookies[name] = value;
   }

@@ -35,12 +35,13 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
 
   try {
     var cookies = parseCookieString(req.headers.cookie || '');
+    console.log(cookies);
   } catch(e: any) {
     return handle400(res, 'Malformed cookie string');
   }
 
-  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Domain=${process.env.HOST}; Path=/; Max-Age=3600; SameSite=Strict`)
-  handle302(res, `https://${process.env.HOST}:${process.env.PORT}${cookies._referer || '/'}`, '');
+  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Domain=${process.env._HOSTNAME}; Path=/; Max-Age=3600; SameSite=Strict`)
+  handle302(res, cookies._referer || '/', '');
   return;
 }
 
@@ -49,7 +50,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, clientPg
   try {
     const userid = await verifySession(req, clientPg);
     if (userid)
-      return handle307(res, `https://${process.env.HOST}:${process.env.PORT}/`, req.url || '/');
+      return handle307(res, `/`, req.url || '/');
   } catch(e: any) {
     return handle400(res, e.message);
   }

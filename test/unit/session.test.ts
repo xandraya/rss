@@ -19,7 +19,7 @@ describe('verifySession', () => {
       }
     };
 
-    await expect(() => verifySession(req as any, clientPg)).rejects.toBeTruthy();
+    await expect(() => verifySession(req as IncomingMessage, clientPg)).rejects.toBeTruthy();
   });
 
   test('Returns undefined if session cannot be verified', async () => {

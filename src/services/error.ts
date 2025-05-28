@@ -21,14 +21,14 @@ function template(code: string, reason: string) {
 export function handle302(res: ServerResponse, url: string, referer: string, data?: string,) {
   res.statusCode = 302;
   res.setHeader('Location', url)
-    .appendHeader('Set-Cookie', `_referer="${referer}"; Domain=${process.env.HOST}; Path=/; SameSite=Strict`)
+    .appendHeader('Set-Cookie', `_referer="${referer}"; Domain=${process.env._HOSTNAME}; Path=/; SameSite=Strict`)
     .end(data);
 }
 
 export function handle307(res: ServerResponse, url: string, referer: string, data?: string) {
   res.statusCode = 307;
   res.setHeader('Location', url)
-    .appendHeader('Set-Cookie', `_referer="${referer}"; Domain=${process.env.HOST}; Path=/; SameSite=Strict`)
+    .appendHeader('Set-Cookie', `_referer="${referer}"; Domain=${process.env._HOSTNAME}; Path=/; SameSite=Strict`)
     .end(data);
 }
 

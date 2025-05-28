@@ -6,25 +6,9 @@ let CACHE_ENABLED = process.env._CACHE_ENABLED || true;
 
 const configPg: pg.ClientConfig = Object.freeze({
   user: 'postgres',
-	host: 'database',
+  host: 'database',
   port: 6566,
-	password: 'password',
-});
-
-const configRedis: redis.RedisClientOptions<redis.RedisModules, redis.RedisFunctions, redis.RedisScripts> = Object.freeze({
-  socket: {
-    host: 'cache',
-    port: 6567,
-    family: 4,
-    //keepAlive: 5000,
-    reconnectStrategy: (retries: number) => { 
-      if (retries > 6)
-        return new Error('Connection timed out');
-
-      return retries*500;
-    },
-  },
-  readonly: false,
+  password: 'password',
 });
 
 export async function initPg(database: string): Promise<pg.Client> {
@@ -40,6 +24,22 @@ export async function initPg(database: string): Promise<pg.Client> {
 }
 
 export async function initRedis() {
+  const configRedis: redis.RedisClientOptions<redis.RedisModules, redis.RedisFunctions, redis.RedisScripts> = Object.freeze({
+    socket: {
+      host: 'cache',
+      port: 6567,
+      family: 4,
+      //keepAlive: 5000,
+      reconnectStrategy: (retries: number) => { 
+        if (retries > 6)
+          return new Error('Connection timed out');
+
+        return retries*500;
+      },
+    },
+    readonly: false,
+  });
+
   const client = await redis.createClient(configRedis).connect();
 
   client.on('ready', () => {
@@ -63,10 +63,16 @@ export async function initRedis() {
 }
 
 export async function initHTTPClient(): Promise<HTTPClient> {
-  const client = new HTTPClient({ debug: 2, pgOptions: { ...configPg, database: "http_client" }  });
+  const client = new HTTPClient({ debug: 0, pgOptions: { ...configPg, database: "http_client" }  });
   await client.bootup();
 
   return client;
+}
+
+export async function teardown(client: HTTPClient, clientPG: pg.Client, clientRedis: any) {
+  client.teardown;
+  clientPG.end();
+  clientRedis.quit();
 }
 
 export async function createTables(client: pg.Client): Promise<undefined> {

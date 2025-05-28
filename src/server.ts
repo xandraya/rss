@@ -1,29 +1,36 @@
 import * as https from 'node:https';
 import * as fs from 'node:fs';
 
-import { CLUSTER_COUNT } from './index';
 import * as db from './services/db';
 import { sendMessage } from './services/misc';
 import { handle404, handle500 } from './services/error';
 
+import * as test_scrape from './api/test/scrape';
 import * as login from './auth/local/login';
 import * as register from './auth/local/register';
 import * as secret from './api/secret';
+import * as scrape from './api/scrape';
 import * as folder from './api/add/folder';
 
 import type { SystemError } from './types.d';
+import type { Client } from 'pg';
+import type HTTPClient from '76a01a3490137f87';
 
-export default async function initServer(wrkID: number) {
+export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
+  let client: HTTPClient;
+  let clientPG: Client;
+  let clientRedis: any;
   if (!process.env._JWT_KEY) throw new Error('JWT Key not initialized');
-  if (!process.env.HOST) throw new Error('Hostname not initialized');
-  if (!process.env.PORT) throw new Error('Global port not initialized');
+  if (!process.env._HOSTNAME) throw new Error('Hostname not initialized');
 
   //const tlsSessionStore = new Map<string, Buffer>();
-  const clientPg = wrkID === CLUSTER_COUNT+1 ? await db.initPg('test') : await db.initPg('server');
-  const clientRedis = await db.initRedis();
-  //const client = await db.initHTTPClient();
-  //await db.dropTables(clientPg);
-  await db.createTables(clientPg);
+  if (wrkID !== CLUSTER_COUNT+2) {
+    clientPG = wrkID === CLUSTER_COUNT+1 ? await db.initPg('test') : await db.initPg('server');
+    clientRedis = await db.initRedis();
+    client = await db.initHTTPClient();
+    //await db.dropTables(clientPG);
+    await db.createTables(clientPG);
+  }
 
   const serverOptions = Object.freeze({
     // net.createServer
@@ -49,7 +56,8 @@ export default async function initServer(wrkID: number) {
 
   const listenOptions = Object.freeze({
     //host: '0.0.0.0',
-    port: wrkID === CLUSTER_COUNT+1 ? 8081 : 8080,
+    port: wrkID === CLUSTER_COUNT+1 ? 8081 :
+      wrkID === CLUSTER_COUNT+2 ? 8082 : 8080,
     //exclusive: true,
   });
 
@@ -66,6 +74,7 @@ export default async function initServer(wrkID: number) {
         break;
       default:
         sendMessage(wrkID, `Unhandled exception; Closing Worker ${wrkID}`);
+        db.teardown(client, clientPG, clientRedis);
         server.close();
         process.exit(1);
     }
@@ -108,21 +117,37 @@ export default async function initServer(wrkID: number) {
 
     try {
       const paramIndex = req.url!.indexOf('?');
-      switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
-        // auth
-        case '/auth/local/login': await login.handle(req, res, clientPg); break;
-        case '/auth/local/register': await register.handle(req, res, clientPg); break;
+      if (wrkID === CLUSTER_COUNT+2) {
+        // testing endpoints
+        switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
+          case '/api/test/scrape': await test_scrape.handle(req, res); break;
 
-        // api
-        case '/api/secret': await secret.handle(req, res, clientPg, clientRedis); break;
-        case '/api/add/folder': await folder.handle(req, res, clientPg); break;
+          // ROOT
+          case '/':
+            res.statusCode = 200;
+            res.end('root');
+            break;
+          default: handle404(res);
+        }
+      } else {
+        // default endpoints
+        switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
+          // auth
+          case '/auth/local/login': await login.handle(req, res, clientPG); break;
+          case '/auth/local/register': await register.handle(req, res, clientPG); break;
 
-        // ROOT
-        case '/':
-          res.statusCode = 200;
-          res.end('root');
-          break;
-        default: handle404(res);
+          // api
+          case '/api/secret': await secret.handle(req, res, clientPG, clientRedis); break;
+          case '/api/scrape': await scrape.handle(req, res, client, clientPG); break;
+          case '/api/add/folder': await folder.handle(req, res, clientPG); break;
+
+          // ROOT
+          case '/':
+            res.statusCode = 200;
+            res.end('root');
+            break;
+          default: handle404(res);
+        }
       }
     } catch(err: any) {
       handle500(res, err);
@@ -130,6 +155,7 @@ export default async function initServer(wrkID: number) {
   });
 
   server.on('close', () => {
+    db.teardown(client, clientPG, clientRedis);
     sendMessage(wrkID, 'Server closed');
   });
 

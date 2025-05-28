@@ -41,7 +41,7 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Cli
   req.setEncoding('utf8')
   let data: string = '';
   for await (const chunk of req) data += chunk;
-  const url = new URL(`https://${process.env.HOST ?? 'localhost'}/status?${data}`); 
+  const url = new URL(`https://localhost/status?${data}`); 
 
   const username = url.searchParams.get('username');
   const password = url.searchParams.get('password');

@@ -1,21 +1,19 @@
 import * as https from 'node:https';
-import * as fs from 'node:fs';
-
-const options = {
-  hostname: 'app',
-  port: 8081,
-  headers: {
-    'Cookie': '_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiYWRmOGMyZWUwNTBiMjE3MyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDc2NDU3MjgsImV4cCI6MTgxMDcxNzcyOH0.yz2GqqSA1f9TbWIW54c7qPydqWS5AqZCsUmQOq2jjow"',
-  },
-  method: 'POST',
-  protocol: 'https:',
-  path: '/api/add/folder',
-  ca: fs.readFileSync('./key/cacert.pem'),
-}
 
 describe('POST', () => {
-  test('Returns 400 if data is malformed', async () => {
-    return new Promise((resolve, reject) => {
+  const options = {
+    hostname: 'app',
+    port: 8081,
+    headers: {
+      'Cookie': '_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiYWRmOGMyZWUwNTBiMjE3MyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDc2NDU3MjgsImV4cCI6MTgxMDcxNzcyOH0.yz2GqqSA1f9TbWIW54c7qPydqWS5AqZCsUmQOq2jjow"',
+    },
+    method: 'POST',
+    protocol: 'https:',
+    path: '/api/add/folder',
+  }
+
+  test('Returns 400 if data is malformed', () => {
+    const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let data = '';
 
@@ -35,11 +33,13 @@ describe('POST', () => {
       req.write('foobar');
         
       req.end();
-    }).then(r => expect(r).toMatch(new RegExp('Request could not be parsed')));
+    })
+
+    expect(request).resolves.toMatch(new RegExp('Request could not be parsed'));
   });
 
-  test('Returns 400 if folder already exists', async () => {
-    return new Promise((resolve, reject) => {
+  test('Returns 400 if folder already exists', () => {
+    const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let data = '';
 
@@ -59,11 +59,13 @@ describe('POST', () => {
       req.write('{ "name": "existingfolder" }');
         
       req.end();
-    }).then(r => expect(r).toMatch(new RegExp('Folder name already exists')));
+    });
+
+    expect(request).resolves.toMatch(new RegExp('Folder name already exists'));
   });
 
-  test('Returns 201 if folder is successfully added', async () => {
-    return new Promise((resolve, reject) => {
+  test('Returns 201 if folder is successfully added', () => {
+    const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let data = '';
 
@@ -83,6 +85,8 @@ describe('POST', () => {
       req.write('{ "name": "newfolder" }');
         
       req.end();
-    }).then(r => expect(r).toBe(201));
+    });
+
+    expect(request).resolves.toBe(201);
   });
 });

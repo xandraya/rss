@@ -7,7 +7,7 @@ import initServer from './server';
 
 import type { Message } from './types.d';
 
-export const CLUSTER_COUNT = process.env._WORKER_COUNT ? Number(process.env._WORKER_COUNT) : require('node:os').availableParallelism() as number;
+const CLUSTER_COUNT = process.env._WORKER_COUNT ? Number(process.env._WORKER_COUNT) : require('node:os').availableParallelism() as number;
 const encoder = new TextEncoder();
 
 if (cluster.isPrimary) {
@@ -18,8 +18,8 @@ if (cluster.isPrimary) {
   fs.mkdir('./logs', { recursive: true }, (err) => {
     if (err) throw new Error('MKDIR FAILED');
 
-    // initializes extra worker for testing
-    for (let i=0; i<CLUSTER_COUNT+1; i++) {
+    // initializes extra workers for testing
+    for (let i=0; i < (process.env._TEST_ENABLED ? CLUSTER_COUNT+2 : CLUSTER_COUNT); i++) {
 
       const fd = fs.openSync(`./logs/wrk${i+1}.log`, 'w');
       const worker = cluster.fork();
@@ -47,5 +47,6 @@ if (cluster.isPrimary) {
     }
   });
 } else {
-  if (cluster.worker && cluster.worker.id) initServer(cluster.worker.id);
+  if (cluster.worker && cluster.worker.id) 
+    setTimeout((id) => initServer(id, CLUSTER_COUNT), cluster.worker.id*1000, cluster.worker.id);
 }

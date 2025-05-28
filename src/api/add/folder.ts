@@ -35,7 +35,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, clientPg
   try {
     var userid = await verifySession(req, clientPg);
     if (!userid)
-      return handle302(res, `https://${process.env.HOST}:${process.env.PORT}/auth/local/login`, req.url || '/');
+      return handle302(res, `/auth/local/login`, req.url || '/');
   } catch(e: any) {
     return handle400(res, e.message);
   }
