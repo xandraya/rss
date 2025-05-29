@@ -3,7 +3,7 @@ import * as https from 'node:https';
 describe('GET', () => {
   test('Returns 200 and found feed URLs', () => {
     const options = {
-      hostname: 'app',
+      hostname: process.env._HOSTNAME,
       port: 8081,
       headers: {
         'Cookie': '_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiYWRmOGMyZWUwNTBiMjE3MyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDc2NDU3MjgsImV4cCI6MTgxMDcxNzcyOH0.yz2GqqSA1f9TbWIW54c7qPydqWS5AqZCsUmQOq2jjow"',
@@ -33,6 +33,6 @@ describe('GET', () => {
       req.end();
     });
 
-    expect(request).resolves.toBe('[{"title":"rss","href":"https://app:8082/feed.rss"},{"title":"atom","href":"https://app:8082/feed.atom"}]');
+    return expect(request).resolves.toBe('[{"title":"rss","href":"https://app:8082/feed.rss"},{"title":"atom","href":"https://app:8082/feed.atom"}]');
   });
 });

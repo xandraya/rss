@@ -1,13 +1,13 @@
 import verifySession from '../../src/services/session';
-import { initPg } from '../services/db';
+import { initPG } from '../services/db';
 
 import type { Client } from 'pg';
 import type { IncomingMessage } from 'node:http';
 
-let clientPg: Client;
+let clientPG: Client;
 
 beforeAll(async () => {
-  clientPg = await initPg('test');
+  clientPG = await initPG('test');
 });
 
 describe('verifySession', () => {
@@ -19,7 +19,7 @@ describe('verifySession', () => {
       }
     };
 
-    await expect(() => verifySession(req as IncomingMessage, clientPg)).rejects.toBeTruthy();
+    await expect(() => verifySession(req as IncomingMessage, clientPG)).rejects.toBeTruthy();
   });
 
   test('Returns undefined if session cannot be verified', async () => {
@@ -27,7 +27,7 @@ describe('verifySession', () => {
       headers: {}
     };
 
-    await expect(verifySession(req as IncomingMessage, clientPg)).resolves.toBe(undefined);
+    await expect(verifySession(req as IncomingMessage, clientPG)).resolves.toBe(undefined);
   });
 
   test('Returns username if session is successfully verified', async () => {
@@ -37,10 +37,10 @@ describe('verifySession', () => {
       }
     }
   
-    await expect(verifySession(req as IncomingMessage, clientPg)).resolves.toBe('adf8c2ee050b2173');
+    await expect(verifySession(req as IncomingMessage, clientPG)).resolves.toBe('adf8c2ee050b2173');
   });
 });
 
 afterAll(async () => {
-  await clientPg.end();
+  await clientPG.end();
 });

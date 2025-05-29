@@ -35,12 +35,11 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
 
   try {
     var cookies = parseCookieString(req.headers.cookie || '');
-    console.log(cookies);
   } catch(e: any) {
     return handle400(res, 'Malformed cookie string');
   }
 
-  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Domain=${process.env._HOSTNAME}; Path=/; Max-Age=3600; SameSite=Strict`)
+  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Path=/; Max-Age=3600; SameSite=Strict`)
   handle302(res, cookies._referer || '/', '');
   return;
 }

@@ -1,7 +1,7 @@
-import { initPg, dropTables } from './db';
+import { initPG, dropTables } from './db';
 
 module.exports = async () => {
-  const clientPg = await initPg('test');
+  const clientPg = await initPG('test');
   await dropTables(clientPg);
   await clientPg.end();
 }

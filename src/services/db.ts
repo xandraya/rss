@@ -11,7 +11,7 @@ const configPg: pg.ClientConfig = Object.freeze({
   password: 'password',
 });
 
-export async function initPg(database: string): Promise<pg.Client> {
+export async function initPG(database: string): Promise<pg.Client> {
 	const client = new pg.Client({ ...configPg, database });
 	await client.connect();
 
@@ -80,8 +80,12 @@ export async function createTables(client: pg.Client): Promise<undefined> {
 \ \ email varchar(64), password varchar(64), salt varchar(32))`);
   await client.query(`create table if not exists folder (folderid varchar(16) constraint pk_folderid primary key, \
 \ \ userid varchar(16) references account(userid) on delete cascade, name varchar(32))`);
+  await client.query(`create table if not exists feed (feedid varchar(16) constraint pk_feedid primary key, \
+\ \ url bpchar, count smallint)`);
+  await client.query(`create table if not exists subscription (subid varchar(16) constraint pk_subid primary key, \
+\ \ folderid varchar(16) references folder(folderid) on delete cascade, feedid varchar(16) references feed(feedid), name varchar(16), refresh_date timestamp(0) without time zone)`);
 }
 
 export async function dropTables(client: pg.Client): Promise<undefined> {
-  await client.query(`drop table account, folder`);
+  await client.query(`drop table account, folder, feed, subscription`);
 }

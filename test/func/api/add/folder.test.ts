@@ -1,8 +1,13 @@
 import * as https from 'node:https';
+import { initPG } from '../../../../src/services/db';
+
+import type { Client } from 'pg';
+
+let clientPG: Client;
 
 describe('POST', () => {
   const options = {
-    hostname: 'app',
+    hostname: process.env._HOSTNAME,
     port: 8081,
     headers: {
       'Cookie': '_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiYWRmOGMyZWUwNTBiMjE3MyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDc2NDU3MjgsImV4cCI6MTgxMDcxNzcyOH0.yz2GqqSA1f9TbWIW54c7qPydqWS5AqZCsUmQOq2jjow"',
@@ -12,7 +17,17 @@ describe('POST', () => {
     path: '/api/add/folder',
   }
 
-  test('Returns 400 if data is malformed', () => {
+  beforeAll(async () => {
+    clientPG = await initPG('test');
+    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2b9d34170d53c39a', 'adf8c2ee050b2173', 'existingfolder')`);
+  });
+
+  afterAll(async () => {
+    await clientPG.query('DELETE FROM folder');
+    await clientPG.end();
+  });
+
+  test('Returns 400 if parameters are missing', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let data = '';
@@ -30,12 +45,14 @@ describe('POST', () => {
         reject(e);
       });
 
-      req.write('foobar');
+      req.write(JSON.stringify(
+        { foo: "bar" }
+      ));
         
       req.end();
     })
 
-    expect(request).resolves.toMatch(new RegExp('Request could not be parsed'));
+    return expect(request).resolves.toMatch(new RegExp('Request params could not be parsed'));
   });
 
   test('Returns 400 if folder already exists', () => {
@@ -56,12 +73,14 @@ describe('POST', () => {
         reject(e);
       });
 
-      req.write('{ "name": "existingfolder" }');
+      req.write(JSON.stringify(
+        { folder: "existingfolder" }
+      ));
         
       req.end();
     });
 
-    expect(request).resolves.toMatch(new RegExp('Folder name already exists'));
+    return expect(request).resolves.toMatch(new RegExp('Folder name already exists'));
   });
 
   test('Returns 201 if folder is successfully added', () => {
@@ -82,11 +101,13 @@ describe('POST', () => {
         reject(e);
       });
 
-      req.write('{ "name": "newfolder" }');
+      req.write(JSON.stringify(
+        { folder: "newfolder" }
+      ));
         
       req.end();
     });
 
-    expect(request).resolves.toBe(201);
+    return expect(request).resolves.toBe(201);
   });
 });

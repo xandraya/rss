@@ -9,39 +9,37 @@
     # uses scraper module to find all advertised feeds on a site
   - api/add/folder
     # creates a new folder
-    - called w/ (user, folder)
-  - api/add/sub
-    # binds a subscription to a folder
-    - called w/ (user, folder, feedurl)
-    - count pushed into db determined by hardcoded 1yr age || 100 post limit
-    - posts only pushed if its a new sub to the feed or if posts newer then oldest refresh_date exist
-    - increment feed:count
-    - dump cache hkey 'user:folder'
+    - requires auth
+    - called w/ (folder)
   - api/fetch/folder
     # fetches all folder names
-    - called w/ (user)
-  - api/fetch/post
-    # fetches to a folder; hardcoded limit of 10 posts per page
-    - called w/ (user, folder, options, offset=pagenum*10)
-    - options: sort, status
-    - returns json formatted post list
-    - push/update cache key 'user:folder:offset'
+    - requires auth
+  - api/add/sub
+    # binds a subscription to a folder
+    - requires auth
+    - called w/ (name, folder, feedurl)
+    - dump cache hkey 'user:folder'
 	- api/refresh
-    # refreshes a subscription and fetches new posts
-    - called w/ (user, folder)
-    - update oldest_refresh_date
-    - auto removal if posts are older than oldest_refresh_date; dont remove stared posts
+    # refreshes all subscriptions for a given folder
+    # fetches and adds posts to the database
+    # removes outdated posts and posts that go above the post limit
+    - requires auth
+    - called w/ (folder)
     - dump cache key 'user:folder'
+  - api/fetch/post
+    # fetches posts that belong to chosen folder subscriptions
+    - requires auth
+    - called w/ (folder, pagenum, opts?: { sort = alpha, status? = [read?, starred?] })
+    - push/update cache key 'user:folder:offset'
   - api/remove
     # removes a subscription || folder
-    - called w/ (folder, sub) || (folder)
-    - fetch feedid of removed subscription; decrement site:counter
-    - remove posts older than the oldeset refresh_date; including stared posts if this was users only subscription to that feed
-    - check all feed:counter cols; remove posts according to count and oldest refresh_date
+    - requires auth
+    - called w/ (sub) || (folder)
     - dump cache hkey 'user:folder'
   - api/update
     # updates status table
-    - called w/ (user, post)
+    - requires auth
+    - called w/ (post, opts: { read, starred })
     - dump cache hkey 'user:folder'
 - cache schema:
   - user:folder 
@@ -52,15 +50,14 @@
   # has b-tree index on FKeys
 	- account | userid, username, email, password, salt
 	- folder | folderid, userid (CASCADE), name
-	- feed | feedid, site, feedurl, count
-	- sub | subid, folderid (CASCADE), feedid, refresh_date
+	- feed | feedid, url, count
+	- sub | subid, folderid (CASCADE), feedid, name, refresh_date
 	- post | postid, feedid (CASCADE), title, date, ..., content
   - status | userid (CASCADE), postid (CASCADE), star, read
 
 # extra
 # sub rules
 # youtube/podcasts?
-# jwt session management
 
 /* todo
  * check js api:

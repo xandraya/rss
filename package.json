@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "private": true,
   "scripts": {
-    "test": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx jest --roots ./test/func",
+    "test": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx jest --roots ./test --runInBand",
     "start": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx tsx src/index.ts"
   },
   "author": "me:)",

@@ -5,13 +5,6 @@ import * as db from './services/db';
 import { sendMessage } from './services/misc';
 import { handle404, handle500 } from './services/error';
 
-import * as test_scrape from './api/test/scrape';
-import * as login from './auth/local/login';
-import * as register from './auth/local/register';
-import * as secret from './api/secret';
-import * as scrape from './api/scrape';
-import * as folder from './api/add/folder';
-
 import type { SystemError } from './types.d';
 import type { Client } from 'pg';
 import type HTTPClient from '76a01a3490137f87';
@@ -21,11 +14,10 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
   let clientPG: Client;
   let clientRedis: any;
   if (!process.env._JWT_KEY) throw new Error('JWT Key not initialized');
-  if (!process.env._HOSTNAME) throw new Error('Hostname not initialized');
 
   //const tlsSessionStore = new Map<string, Buffer>();
   if (wrkID !== CLUSTER_COUNT+2) {
-    clientPG = wrkID === CLUSTER_COUNT+1 ? await db.initPg('test') : await db.initPg('server');
+    clientPG = wrkID === CLUSTER_COUNT+1 ? await db.initPG('test') : await db.initPG('server');
     clientRedis = await db.initRedis();
     client = await db.initHTTPClient();
     //await db.dropTables(clientPG);
@@ -120,7 +112,7 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
       if (wrkID === CLUSTER_COUNT+2) {
         // testing endpoints
         switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
-          case '/api/test/scrape': await test_scrape.handle(req, res); break;
+          case '/api/test/scrape': await (require('./api/test/scrape')).handle(req, res, clientPG); break;
 
           // ROOT
           case '/':
@@ -133,13 +125,14 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
         // default endpoints
         switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
           // auth
-          case '/auth/local/login': await login.handle(req, res, clientPG); break;
-          case '/auth/local/register': await register.handle(req, res, clientPG); break;
+          case '/auth/local/login': await (require('./auth/local/login')).handle(req, res, clientPG); break;
+          case '/auth/local/register': await (require('./auth/local/register')).handle(req, res, clientPG); break;
 
           // api
-          case '/api/secret': await secret.handle(req, res, clientPG, clientRedis); break;
-          case '/api/scrape': await scrape.handle(req, res, client, clientPG); break;
-          case '/api/add/folder': await folder.handle(req, res, clientPG); break;
+          case '/api/secret': await (require('./api/secret')).handle(req, res, clientPG, clientRedis); break;
+          case '/api/scrape': await (require('./api/scrape')).handle(req, res, client, clientPG); break;
+          case '/api/add/folder': await (require('./api/add/folder')).handle(req, res, clientPG); break;
+          case '/api/add/sub': await (require('./api/add/sub')).handle(req, res, clientPG); break;
 
           // ROOT
           case '/':
