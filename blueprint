@@ -7,30 +7,13 @@
 	- auth/google
   - api/scrape
     # uses scraper module to find all advertised feeds on a site
-  - api/add/folder
-    # creates a new folder
-    - requires auth
-    - called w/ (folder)
-  - api/fetch/folder
-    # fetches all folder names
-    - requires auth
-  - api/add/sub
-    # binds a subscription to a folder
-    - requires auth
-    - called w/ (name, folder, feedurl)
-    - dump cache hkey 'user:folder'
 	- api/refresh
     # refreshes all subscriptions for a given folder
     # fetches and adds posts to the database
     # removes outdated posts and posts that go above the post limit
     - requires auth
     - called w/ (folder)
-    - dump cache key 'user:folder'
-  - api/fetch/post
-    # fetches posts that belong to chosen folder subscriptions
-    - requires auth
-    - called w/ (folder, pagenum, opts?: { sort = alpha, status? = [read?, starred?] })
-    - push/update cache key 'user:folder:offset'
+    - dump cache key 'user:folder' field 'flags'
   - api/remove
     # removes a subscription || folder
     - requires auth
@@ -41,6 +24,23 @@
     - requires auth
     - called w/ (post, opts: { read, starred })
     - dump cache hkey 'user:folder'
+  - api/add/folder
+    # creates a new folder
+    - requires auth
+    - called w/ (folder)
+  - api/add/sub
+    # binds a subscription to a folder
+    - requires auth
+    - called w/ (name, folder, feedurl)
+  - api/fetch/folders
+    # fetches all folder names
+    - requires auth
+    - push/update cache hkey 'user'
+  - api/fetch/posts
+    # fetches posts that belong to chosen folder subscriptions
+    - requires auth
+    - called w/ (folder, pagenum, opts?: { sort = date_desc, status? = [read?, starred?] })
+    - push/update cache hash key 'user:folder:flags' field 'offset'
 - cache schema:
   - user:folder 
     - tables: folder, sub, post, status
@@ -58,6 +58,8 @@
 # extra
 # sub rules
 # youtube/podcasts?
+# wrap feedparser into an async iterator
+# feedparser stream writting buffer
 
 /* todo
  * check js api:

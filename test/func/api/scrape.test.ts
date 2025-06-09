@@ -10,7 +10,7 @@ describe('GET', () => {
       },
       method: 'GET',
       protocol: 'https:',
-      path: '/api/scrape?site=https%3A%2F%2Fapp%3A8082%2Fapi%2Ftest%2Fscrape',
+      path: '/api/scrape?site=https%3A%2F%2Fapp%3A8082%2Fapi%2Fblob%2Ffunc_scrape.html',
     }
 
     const request = new Promise((resolve, reject) => {

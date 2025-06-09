@@ -15,10 +15,12 @@ export async function initPG(database: string): Promise<pg.Client> {
 	const client = new pg.Client({ ...configPg, database });
 	await client.connect();
 
+  /*
 	client.on('error', err => {
 		console.error('postgres error', err.stack)
 	});
 	client.on('notice', msg => console.warn('notice:', msg));
+  */
 
 	return client;
 }
@@ -76,16 +78,21 @@ export async function teardown(client: HTTPClient, clientPG: pg.Client, clientRe
 }
 
 export async function createTables(client: pg.Client): Promise<undefined> {
-  await client.query(`create table if not exists account (userid varchar(16) constraint pk_userid primary key, username varchar(32), \
+  await client.query(`CREATE TABLE IF NOT EXISTS account (userid varchar(16) CONSTRAINT pk_userid PRIMARY KEY, username varchar(32), \
 \ \ email varchar(64), password varchar(64), salt varchar(32))`);
-  await client.query(`create table if not exists folder (folderid varchar(16) constraint pk_folderid primary key, \
-\ \ userid varchar(16) references account(userid) on delete cascade, name varchar(32))`);
-  await client.query(`create table if not exists feed (feedid varchar(16) constraint pk_feedid primary key, \
+  await client.query(`CREATE TABLE IF NOT EXISTS folder (folderid varchar(16) CONSTRAINT pk_folderid PRIMARY KEY, \
+\ \ userid varchar(16) REFERENCES account(userid) ON DELETE CASCADE, name varchar(32))`);
+  await client.query(`CREATE TABLE IF NOT EXISTS feed (feedid varchar(16) CONSTRAINT pk_feedid PRIMARY KEY, \
 \ \ url bpchar, count smallint)`);
-  await client.query(`create table if not exists subscription (subid varchar(16) constraint pk_subid primary key, \
-\ \ folderid varchar(16) references folder(folderid) on delete cascade, feedid varchar(16) references feed(feedid), name varchar(16), refresh_date timestamp(0) without time zone)`);
+  await client.query(`CREATE TABLE IF NOT EXISTS subscription (subid varchar(16) CONSTRAINT pk_subid PRIMARY KEY, \
+\ \ folderid varchar(16) REFERENCES folder(folderid) ON DELETE CASCADE, feedid varchar(16) REFERENCES feed(feedid), name varchar(16), refresh_date timestamp(0) without time zone)`);
+  await client.query(`CREATE TABLE IF NOT EXISTS post (postid varchar(16) CONSTRAINT pk_postid PRIMARY KEY, \
+\ \ feedid varchar(16) REFERENCES feed(feedid) ON DELETE CASCADE, title varchar(64), date timestamp, content text, \
+\ \ url bpchar, author varchar(64), image_title varchar(64), image_url bpchar)`);
+  await client.query(`CREATE TABLE IF NOT EXISTS status (userid varchar(16) REFERENCES account(userid) ON DELETE CASCADE, \
+\ \ postid varchar(16) REFERENCES post(postid) ON DELETE CASCADE, star boolean, read boolean)`);
 }
 
 export async function dropTables(client: pg.Client): Promise<undefined> {
-  await client.query(`drop table account, folder, feed, subscription`);
+  await client.query(`DROP TABLE account, folder, feed, subscription, post, status CASCADE`);
 }

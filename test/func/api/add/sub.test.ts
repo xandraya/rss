@@ -26,7 +26,7 @@ describe('POST', () => {
   });
 
   afterAll(async () => {
-    await clientPG.query('TRUNCATE TABLE folder, feed, subscription');
+    await clientPG.query('TRUNCATE TABLE folder, feed, subscription, post, status');
     await clientPG.end();
   });
 
@@ -152,7 +152,6 @@ describe('POST', () => {
         });
         
         res.on('end', () => {
-          console.log(data);
           resolve(res.statusCode);
         });
       });
@@ -181,7 +180,6 @@ describe('POST', () => {
         });
         
         res.on('end', () => {
-          console.log(data);
           resolve(res.statusCode);
         });
       });

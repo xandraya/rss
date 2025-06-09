@@ -36,12 +36,12 @@ if (cluster.isPrimary) {
 
       worker.on('exit', (code, signal) => {
         if (signal) {
-          console.log(`Worker was killed by signal: ${signal}`);
+          console.log(`Worker ${i} was killed by signal: ${signal}`);
         }
         else if (code !== 0)
-          console.log(`Worker exited with error code: ${code}`);
+          console.log(`Worker ${i} exited with error code: ${code}`);
         else {
-          console.log('Worker success!');
+          console.log(`Worker ${i} success!`);
         }
       });
     }
