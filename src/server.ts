@@ -112,8 +112,8 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
       if (wrkID === CLUSTER_COUNT+2) {
         // testing endpoints
         switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
-          case '/api/blob/unit_scrape.html': await (require('./api/blob')).handle(req, res, 'unit_scrape.html'); break;
           case '/api/blob/unit_refresh.xml': await (require('./api/blob')).handle(req, res, 'unit_refresh.xml'); break;
+          case '/api/blob/func_scrape.html': await (require('./api/blob')).handle(req, res, 'func_scrape.html'); break;
           case '/api/blob/func_refresh.xml': await (require('./api/blob')).handle(req, res, 'func_refresh.xml'); break;
 
           // ROOT
@@ -136,6 +136,7 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
           case '/api/add/folder': await (require('./api/add/folder')).handle(req, res, clientPG); break;
           case '/api/add/sub': await (require('./api/add/sub')).handle(req, res, clientPG); break;
           case '/api/refresh': await (require('./api/refresh')).handle(req, res, client, clientPG); break;
+          case '/api/fetch/folder': await (require('./api/fetch/folder')).handle(req, res, clientPG); break;
 
           // ROOT
           case '/':

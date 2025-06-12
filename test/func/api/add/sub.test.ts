@@ -19,7 +19,8 @@ describe('POST', () => {
 
   beforeAll(async () => {
     clientPG = await initPG('test');
-    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'fail'), ('2', 'adf8c2ee050b2173', 'success')`);
+    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'fail')`);
+    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'success')`);
     await clientPG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://localhost/rss.xml', 2)`);
     await clientPG.query(`INSERT INTO subscription (subid, name) VALUES ('1', 'sameName')`);
     await clientPG.query(`INSERT INTO subscription (subid, folderid, feedid, name) VALUES ('2', '1', '1', 'sameUrl')`);

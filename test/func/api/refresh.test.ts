@@ -121,7 +121,6 @@ describe('POST', () => {
     expect(await request).toBe(201);
 
     const feed01 = await clientPG.query(`SELECT * FROM post WHERE feedid = '1' ORDER BY date DESC`).then(r => r.rows);
-    console.log(feed01);
     expect(feed01.length).toBe(4);
     expect(feed01[0].postid).toBe('ff197ba8f031bd29');
     expect(feed01[1].postid).toBe('04f3362fc426a395');
@@ -129,7 +128,6 @@ describe('POST', () => {
     expect(feed01[3].postid).toBe('594cec3df5f1b22c');
 
     const feed02 = await clientPG.query(`SELECT * FROM post WHERE feedid = '2' ORDER BY date DESC`).then(r => r.rows);
-    console.log(feed02);
     expect(feed02.length).toBe(1);
     expect(feed02[0].postid).toBe('3f2730225463f8f5');
   });
