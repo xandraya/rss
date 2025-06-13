@@ -7,7 +7,7 @@ import type { Client } from 'pg';
 import type HTTPClient from '76a01a3490137f87';
 import { hash } from 'crypto';
 
-const POST_LIMIT = Number(process.env._POST_LIMIT) || 50;
+const SUB_POST_LIMIT = Number(process.env._SUB_POST_LIMIT) || 50;
 
 interface FeedItem {
   title: string
@@ -116,8 +116,8 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
 
     for (let i=0; i<feeds.length; i++) {
       const count: number = await clientPG.query(`SELECT count(*) FROM cleanup WHERE feedid = '${feeds[i].feedid}'`).then(r => r.rows[0].count);
-      if (count-POST_LIMIT > 0)
-        await clientPG.query(`DELETE FROM post WHERE postid IN (SELECT postid FROM cleanup ORDER BY date ASC LIMIT ${count-POST_LIMIT})`);
+      if (count-SUB_POST_LIMIT > 0)
+        await clientPG.query(`DELETE FROM post WHERE postid IN (SELECT postid FROM cleanup ORDER BY date ASC LIMIT ${count-SUB_POST_LIMIT})`);
 
       await clientPG.query(`WITH batch AS ( \
 \ \ \ \ SELECT post.postid FROM post LEFT OUTER JOIN status ON post.postid = status.postid \

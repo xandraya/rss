@@ -26,9 +26,9 @@ describe('POST', () => {
     await clientPG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('1', '1', '1', 'sub01', 'Mon, 01 Jan 1972 00:00:00 GMT')`);
     await clientPG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('2', '2', '1', 'sub02', 'Mon, 01 Jan 1972 00:00:00 GMT')`);
     await clientPG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('3', '1', '2', 'sub03', 'Mon, 01 Jan 1972 00:00:00 GMT')`);
-    await clientPG.query(`INSERT INTO post (postid, feedid, title, date, content, url) values ('8b88c521887fc212', '1', '03', 'Mon, 01 May 1970 00:00:02 GMT', 'content', 'http://localhost/03.html')`);
-    await clientPG.query(`INSERT INTO post (postid, feedid, title, date, content, url) values ('594cec3df5f1b22c', '1', '06', 'Mon, 01 Jan 1970 00:00:00 GMT', 'content', 'http://localhost/06.html')`);
-    await clientPG.query(`INSERT INTO post (postid, feedid, title, date, content, url) values ('3f2730225463f8f5', '2', '00', 'Mon, 01 Jan 1970 00:00:00 GMT', 'content', 'http://localhost/null.html')`);
+    await clientPG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('8b88c521887fc212', '1', '03', 'Mon, 01 May 1970 00:00:02 GMT', 'http://localhost/03.html')`);
+    await clientPG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('594cec3df5f1b22c', '1', '06', 'Mon, 01 Jan 1970 00:00:00 GMT', 'http://localhost/06.html')`);
+    await clientPG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('3f2730225463f8f5', '2', '00', 'Mon, 01 Jan 1970 00:00:00 GMT', 'null')`);
     await clientPG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '594cec3df5f1b22c', true)`);
   });
 

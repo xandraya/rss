@@ -137,6 +137,7 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
           case '/api/add/sub': await (require('./api/add/sub')).handle(req, res, clientPG); break;
           case '/api/refresh': await (require('./api/refresh')).handle(req, res, client, clientPG); break;
           case '/api/fetch/folder': await (require('./api/fetch/folder')).handle(req, res, clientPG); break;
+          case '/api/fetch/post': await (require('./api/fetch/post')).handle(req, res, clientPG); break;
 
           // ROOT
           case '/':

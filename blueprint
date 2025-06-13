@@ -1,7 +1,8 @@
 # RSS and ATOM feed aggregator
 - endpoints:
-  # session managed by cookie session string
+  # session managed by cookie _session string
   # api's that require auth are only concerned with parsing the session
+  # post limit and oldest post date per subscription hardcoded on the backend
 	- auth/local/login
 	- auth/local/register
 	- auth/google
@@ -39,7 +40,7 @@
   - api/fetch/posts
     # fetches posts that belong to chosen folder subscriptions
     - requires auth
-    - called w/ (folder, pagenum, opts?: { sort = date_desc, status? = [read?, starred?] })
+    - called w/ (folder, pagenum = 1, opts?: { sort?, status?: [read?, starred?] })
     - push/update cache hash key 'user:folder:flags' field 'offset'
 - cache schema:
   - user:folder 

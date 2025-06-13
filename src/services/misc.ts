@@ -1,7 +1,7 @@
 import * as crypto from 'node:crypto';
 import { promisify } from 'node:util';
 
-import type { Message, Cookies } from '../types.d';
+import type { Message, Cookies, Post } from '../types.d';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 export function sendMessage(wrkID: number, short: string, req?: IncomingMessage) {
@@ -115,4 +115,21 @@ export function blockUV(res: ServerResponse) {
     res.statusCode = 200;
     res.end();
   });
+}
+
+export function isPostArray(unk: unknown): unk is Post[] {
+  if (!Array.isArray(unk)) return false;
+  for (let e of unk) {
+    if (!e.title) return false;
+    if (!e.date) return false;
+    if (!e.url) return false;
+    if (!e.author && e.author !== null) return false;
+    if (!e.content && e.content !== null) return false;
+    if (!e.image_title && e.image_title !== null) return false;
+    if (!e.image_url && e.image_url !== null) return false;
+    if (!e.read && e.read !== null) return false;
+    if (!e.star && e.star !== null) return false;
+  }
+
+  return true;
 }

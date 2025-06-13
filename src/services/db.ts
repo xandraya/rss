@@ -87,8 +87,8 @@ export async function createTables(client: pg.Client): Promise<undefined> {
   await client.query(`CREATE TABLE IF NOT EXISTS subscription (subid varchar(16) CONSTRAINT pk_subid PRIMARY KEY, \
 \ \ folderid varchar(16) REFERENCES folder(folderid) ON DELETE CASCADE, feedid varchar(16) REFERENCES feed(feedid), name varchar(16), refresh_date timestamp(0) without time zone)`);
   await client.query(`CREATE TABLE IF NOT EXISTS post (postid varchar(16) CONSTRAINT pk_postid PRIMARY KEY, \
-\ \ feedid varchar(16) REFERENCES feed(feedid) ON DELETE CASCADE, title varchar(64), date timestamp, content text, \
-\ \ url bpchar, author varchar(64), image_title varchar(64), image_url bpchar)`);
+\ \ feedid varchar(16) REFERENCES feed(feedid) ON DELETE CASCADE, title varchar(64) NOT NULL, date timestamp NOT NULL, url bpchar NOT NULL, \
+\ \ content text, author varchar(64), image_title varchar(64), image_url bpchar)`);
   await client.query(`CREATE TABLE IF NOT EXISTS status (userid varchar(16) REFERENCES account(userid) ON DELETE CASCADE, \
 \ \ postid varchar(16) REFERENCES post(postid) ON DELETE CASCADE, star boolean, read boolean)`);
 }

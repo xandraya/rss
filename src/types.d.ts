@@ -27,6 +27,18 @@ export interface SystemError {
 
 export type Cookies = { [name?: string]: string }
 
+export interface Post {
+  title: string
+  date: Date
+  content: string
+  author: string | null
+  url: string | null
+  image_title: string | null
+  image_url: string | null
+  read: boolean | null
+  star: boolean | null
+}
+
 export interface NodeErrorConstructor extends ErrorConstructor {
     new (message?: string, options?: { cause: string }): Error;
     (message?: string, options?: { cause: string} ): Error;
