@@ -2,8 +2,6 @@ import * as pg from 'pg';
 import * as redis from 'redis';
 import HTTPClient from '76a01a3490137f87';
 
-export let CACHE_ENABLED = process.env._CACHE_ENABLED !== undefined ? process.env._CACHE_ENABLED : true;
-
 // shared pg config
 const config: pg.ClientConfig = Object.freeze({
   user: 'postgres',
@@ -13,7 +11,7 @@ const config: pg.ClientConfig = Object.freeze({
 });
 
 export async function initHTTPClient(): Promise<HTTPClient> {
-  const client = new HTTPClient({ debug: 0, pgOptions: { ...config, database: "http_client" }  });
+  const client = new HTTPClient({ debug: Number(process.env._DEBUG) ? 1 : 0, pgOptions: { ...config, database: "http_client" }  });
   await client.bootup();
 
   return client;
@@ -23,12 +21,12 @@ export async function initPG(db: string): Promise<pg.Client> {
 	const client = new pg.Client({ ...config, database: db });
 	await client.connect();
 
-  /*
-	client.on('error', err => {
-		console.error('postgres error', err.stack)
-	});
-	client.on('notice', msg => console.warn('notice:', msg));
-  */
+  if (Number(process.env._DEBUG)) {
+    client.on('error', err => {
+      console.error('postgres error', err.stack)
+    });
+    client.on('notice', msg => console.warn('notice:', msg));
+  }
 
 	return client;
 }
@@ -53,22 +51,23 @@ export async function initRD(db: number) {
 
   const client = await redis.createClient(configRedis).connect();
 
-  client.on('ready', () => {
-    console.log('Redis client ready; caching enabled');
-    CACHE_ENABLED = true;
-  });
-  client.on('error', () => {
-    console.error('Redis client error; caching disabled');
-    CACHE_ENABLED = false;
-  });
-  client.on('reconnecting', () => {
-    console.warn('Redis client attempting to reconnect; caching disabled');
-    CACHE_ENABLED = false;
-  });
-  client.on('end', () => {
-    console.warn('Redis client exited; caching disabled');
-    CACHE_ENABLED = false;
-  });
+  if (Number(process.env._DEBUG)) {
+    client.on('ready', () => {
+      console.log('Redis client ready; caching enabled');
+    });
+    client.on('error', () => {
+      console.error('Redis client error; caching disabled');
+      process.env._CACHING = '0';
+    });
+    client.on('reconnecting', () => {
+      console.warn('Redis client attempting to reconnect; caching disabled');
+      process.env._CACHING = '0';
+    });
+    client.on('end', () => {
+      console.warn('Redis client exited; caching disabled');
+      process.env._CACHING = '0';
+    });
+  }
 
   return client;
 }

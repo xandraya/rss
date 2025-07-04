@@ -1,13 +1,15 @@
+import * as _cluster from 'node:cluster';
+const cluster = _cluster as unknown as _cluster.Cluster;
 import { handle302, handle400, handle405 } from '../services/error';
 import verifySession from '../services/session';
-import { CACHE_ENABLED } from '../services/db';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 import type { Post } from '../types';
 
-const SUB_POST_LIMIT = Number(process.env._SUB_POST_LIMIT) || 50;
-const PAGE_POST_LIMIT = Number(process.env._PAGE_POST_LIMIT) || 10;
+const AGE_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? process.env._AGE_POST_LIMIT! : '1 year';
+const SUB_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? Number(process.env._SUB_POST_LIMIT) : 3;
+const PAGE_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? Number(process.env._PAGE_POST_LIMIT): 2;
 
 async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any, userid: string): Promise<void> {
   let superkey: string, key: string;
@@ -32,7 +34,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
   if (!folderid) return handle400(res, 'Folder does not exist');
 
   // first attempt fetching from cache
-  if (CACHE_ENABLED) {
+  if (Number(process.env._CACHING)) {
     // create redis key
     superkey = `${userid}.${folderid}`;
     key = '';
@@ -67,7 +69,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
     const query = `SELECT post.title, post.date, post.content, post.author, post.url, post.image_title, post.image_url, status.read, status.star \
 \ \ \ \ FROM subscription sub INNER JOIN post ON sub.feedid = post.feedid LEFT OUTER JOIN status ON post.postid = status.postid \ 
 \ \ \ \ WHERE sub.name = '${sub}' \
-\ \ \ \ AND post.date > sub.refresh_date + '-1 year' \
+\ \ \ \ AND post.date > sub.refresh_date + '-${AGE_POST_LIMIT}' \
 \ \ \ \ AND post.date < sub.refresh_date \
 \ \ \ \ ${opts.read ? 'AND status.read' : ''} \
 \ \ \ \ ${opts.star ? 'AND status.star' : ''} \
@@ -104,14 +106,13 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
       break;
   }
 
-  if (CACHE_ENABLED) {
+  if (Number(process.env._CACHING)) {
     for (let i=1; i<posts.length; i++) {
-      // @ts-ignore
-      key = key.slice(0, key.length-1);
+      key = key!.slice(0, key!.length-1);
       key += i;
 
-      // @ts-ignore
-      await clientRD.hSet(superkey, key, JSON.stringify(posts.slice((i-1)*PAGE_POST_LIMIT, i*PAGE_POST_LIMIT)));
+      await clientRD.hSet(superkey!, key, JSON.stringify(posts.slice((i-1)*PAGE_POST_LIMIT, i*PAGE_POST_LIMIT)));
+      clientRD.emit('end');
     }
   }
 

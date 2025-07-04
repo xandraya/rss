@@ -2,8 +2,6 @@ import { initPG, createTables } from './db';
 require('dotenv').config();
 
 module.exports = async () => {
-  if (!process.env._HOSTNAME) throw new Error('Hostname not initialized');
-
   const CLIENT_PG = await initPG('test');
   await createTables(CLIENT_PG);
   await CLIENT_PG.query(`insert into account (userid, username, email, password, salt)\

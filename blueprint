@@ -3,7 +3,7 @@
 - endpoints:
   # session managed by cookie _session string
   # api's that require auth are only concerned with parsing the session
-  # post limit per page/sub and oldest post date per sub hardcoded on the backend
+  # post limit per page/sub and oldest post date per sub hardcoded for every user
 
 	- /auth/local/login
     - GET /
@@ -185,4 +185,3 @@ TODO:
 - wrap feedparser into an async iterator
 - feedparser stream writting buffer
 - refresh api fetchPosts functions limits
-- CACHING_ENABLED global var?

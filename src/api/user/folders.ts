@@ -1,6 +1,5 @@
 import { handle302, handle400, handle405 } from '../../services/error';
 import verifySession from '../../services/session';
-import { CACHE_ENABLED } from '../../services/db';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
@@ -10,7 +9,7 @@ async function handleGET(res: ServerResponse, clientPG: Client, clientRD: any, u
   let key = 'folders';
 
   // first attempt fetching from cache
-  if (CACHE_ENABLED) {
+  if (Number(process.env._CACHING)) {
     const cachedData: string = await clientRD.hGet(superkey, key);
     if (cachedData) {
       console.log('/user/folders CACHE HIT');
@@ -24,7 +23,7 @@ async function handleGET(res: ServerResponse, clientPG: Client, clientRD: any, u
 
   const folders: string[] = await clientPG.query(`SELECT name FROM folder WHERE userid = '${userid}'`).then(r => r.rows.map(entry => entry.name));
 
-  if (CACHE_ENABLED)
+  if (Number(process.env._CACHING))
     await clientRD.hSet(superkey, key, JSON.stringify(folders));
 
   res.statusCode = 200;

@@ -13,14 +13,13 @@ let CLIENT: HTTPClient;
 let CLIENT_PG: Client;
 let CLIENT_RD: any;
 
-export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
-  if (!process.env._JWT_KEY) throw new Error('JWT Key not initialized');
-
+export default async function initServer(wrkID: number) {
+  const wCount = Number(process.env._WORKER_COUNT);
   //const tlsSessionStore = new Map<string, Buffer>();
-  if (wrkID !== CLUSTER_COUNT+2) {
+  if (wrkID !== wCount+2) {
     CLIENT = await initHTTPClient();
-    CLIENT_PG = wrkID === CLUSTER_COUNT+1 ? await initPG('test') : await initPG('server');
-    CLIENT_RD = await initRD(wrkID === CLUSTER_COUNT+1 ? 1 : 0);
+    CLIENT_PG = wrkID === wCount+1 ? await initPG('test') : await initPG('server');
+    CLIENT_RD = await initRD(wrkID === wCount+1 ? 1 : 0);
 
     if (wrkID === 1) {
       await dropTables(CLIENT_PG);
@@ -52,8 +51,8 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
 
   const listenOptions = Object.freeze({
     //host: '0.0.0.0',
-    port: wrkID === CLUSTER_COUNT+1 ? 8081 :
-      wrkID === CLUSTER_COUNT+2 ? 8082 : 8080,
+    port: wrkID === wCount+1 ? 8081 :
+      wrkID === wCount+2 ? 8082 : 8080,
     //exclusive: true,
   });
 
@@ -78,7 +77,7 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
     }
   });
 
-  server.on('CLIENTError', (err: SystemError, socket) => {
+  server.on('clientError', (err: SystemError, socket) => {
     switch (err.code) {
       case 'HPE_HEADER_OVERFLOW':
         socket.writable && socket.end('HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n');
@@ -115,7 +114,7 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
 
     try {
       const paramIndex = req.url!.indexOf('?');
-      if (wrkID === CLUSTER_COUNT+2) {
+      if (wrkID === wCount+2) {
         // testing endpoints
         switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
           case '/api/blob/unit_refresh.xml': await (require('./api/blob')).handle(req, res, 'unit_refresh.xml'); break;
