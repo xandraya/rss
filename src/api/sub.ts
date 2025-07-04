@@ -1,6 +1,6 @@
-import { handle302, handle400, handle405 } from '../../services/error';
-import verifySession from '../../services/session';
-import { random } from '../../services/misc';
+import { handle302, handle400, handle405 } from '../services/error';
+import verifySession from '../services/session';
+import { random } from '../services/misc';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
@@ -59,13 +59,34 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, userid: str
   res.end();
 }
 
+async function handleDELETE(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  req.setEncoding('utf8')
+  {
+    let data: string = '';
+    for await (const chunk of req) data += chunk;
+    try {
+      var serialized = JSON.parse(data);
+      if (!serialized.sub) throw new Error();
+    } catch(e: any) {
+      return handle400(res, 'Request params could not be parsed');
+    }
+  }
+
+  /* for each of the supplied subscriptions id's modify entries in the feed table by
+    * decrementing the counter value
+    * removing the entry if counter value reaches 0
+  */
+
+  // handle edge case of users having stared posts that don't belong to any of their subscriptions
+}
+
 export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client): Promise<void> {
   res.strictContentLength = true;
 
   try {
     var userid = await verifySession(req, clientPG);
     if (!userid)
-      return  handle302(res, `/auth/local/login`, req.url || '/');
+      return handle302(res, `/auth/local/login`, req.url || '/');
   } catch(e: any) {
     return handle400(res, e.message);
   }

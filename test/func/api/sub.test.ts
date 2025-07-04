@@ -1,9 +1,9 @@
 import * as https from 'node:https';
-import { initPG } from '../../../../src/services/db';
+import { initPG } from '../../../src/services/db';
 
 import type { Client } from 'pg';
 
-let clientPG: Client;
+let CLIENT_PG: Client;
 
 describe('POST', () => {
   const options = {
@@ -14,32 +14,33 @@ describe('POST', () => {
     },
     method: 'POST',
     protocol: 'https:',
-    path: '/api/add/sub',
+    path: '/api/sub',
   }
 
   beforeAll(async () => {
-    clientPG = await initPG('test');
-    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'fail')`);
-    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'success')`);
-    await clientPG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://localhost/rss.xml', 2)`);
-    await clientPG.query(`INSERT INTO subscription (subid, name) VALUES ('1', 'sameName')`);
-    await clientPG.query(`INSERT INTO subscription (subid, folderid, feedid, name) VALUES ('2', '1', '1', 'sameUrl')`);
+    CLIENT_PG = await initPG('test');
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'folder02')`);
   });
 
   afterAll(async () => {
-    await clientPG.query('TRUNCATE TABLE folder, feed, subscription, post, status');
-    await clientPG.end();
+    await CLIENT_PG.query('TRUNCATE TABLE folder, feed, subscription, post, status CASCADE');
+    await CLIENT_PG.end();
+  });
+
+  afterEach(async () => {
+    await CLIENT_PG.query('TRUNCATE TABLE feed, subscription CASCADE');
   });
 
   test('Returns 400 if parameters are missing', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
+        expect(res.statusCode).toBe(400);
 
+        let data = '';
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -48,26 +49,27 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
         { foo: "bar" }
       ));
-        
       req.end();
     })
 
     return expect(request).resolves.toMatch(new RegExp('Request params could not be parsed'));
   });
 
-  test('Returns 400 if subscription with the same name already exists', () => {
+  test('Returns 400 if subscription with the same name already exists', async () => {
+    await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://localhost/rss.xml', 1)`);
+    await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('1', '1', '1', 'sub01', 'Mon, 01 Jun 1971 00:00:00 GMT')`);
+
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
+        expect(res.statusCode).toBe(400);
 
+        let data = '';
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -76,26 +78,27 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { name: 'sameName', folder: 'fail', url: 'null' }
+        { name: 'sub01', folder: 'folder01', url: 'https://localhost/null' }
       ));
-        
       req.end();
     });
 
     return expect(request).resolves.toMatch(new RegExp('Subscription with this name already exists'));
   });
 
-  test('Returns 400 if subscription to the same feed already exists', () => {
+  test('Returns 400 if subscription to the same feed already exists', async () => {
+    await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://localhost/rss.xml', 1)`);
+    await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('1', '1', '1', 'sub01', 'Mon, 01 Jun 1971 00:00:00 GMT')`);
+
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
+        expect(res.statusCode).toBe(400);
 
+        let data = '';
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -104,11 +107,9 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { name: 'null', folder: 'fail', url: 'https://localhost/rss.xml' }
+        { name: 'null', folder: 'folder01', url: 'https://localhost/rss.xml' }
       ));
-        
       req.end();
     });
 
@@ -118,12 +119,12 @@ describe('POST', () => {
   test('Returns 400 if folder does not exist', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(400);
+        
         let data = '';
-
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -132,26 +133,22 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { name: 'null', folder: 'null', url: 'https://localhost/rss.xml' }
+        { name: 'null', folder: 'null', url: 'https://localhost/null' }
       ));
-        
       req.end();
     });
 
     return expect(request).resolves.toMatch(new RegExp('Folder does not exist'));
   });
 
-  test('Returns 201 if subscription to an already known feed is successfully added', () => {
+  test('Returns 201 if subscription to an already known feed is successfully added', async () => {
+    await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://localhost/rss.xml', 1)`);
+    await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('1', '1', '1', 'sub01', 'Mon, 01 Jun 1971 00:00:00 GMT')`);
+
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
-
-        res.on('data', (d: string) => {
-          data += d;
-        });
-        
+        res.on('data', () => {});
         res.on('end', () => {
           resolve(res.statusCode);
         });
@@ -160,11 +157,9 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { name: 'addKnown', folder: 'success', url: 'https://localhost/rss.xml' }
+        { name: 'null', folder: 'folder02', url: 'https://localhost/rss.xml' }
       ));
-        
       req.end();
     });
 
@@ -174,12 +169,7 @@ describe('POST', () => {
   test('Returns 201 if subscription to an unknown feed is successfully added', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
-
-        res.on('data', (d: string) => {
-          data += d;
-        });
-        
+        res.on('data', () => {});
         res.on('end', () => {
           resolve(res.statusCode);
         });
@@ -188,11 +178,9 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { name: 'addUnknown', folder: 'success', url: 'https://localhost/atom.xml' }
+        { name: 'null', folder: 'folder02', url: 'https://localhost/atom.xml' }
       ));
-        
       req.end();
     });
 

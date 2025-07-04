@@ -3,7 +3,15 @@ import { initPG } from '../../../../src/services/db';
 
 import type { Client } from 'pg';
 
-let clientPG: Client;
+let CLIENT_PG: Client;
+
+beforeAll(async () => {
+  CLIENT_PG = await initPG('test');
+});
+
+afterAll(async () => {
+  await CLIENT_PG.end();
+});
 
 describe('GET', () => {
   const options = {
@@ -14,30 +22,28 @@ describe('GET', () => {
     },
     method: 'GET',
     protocol: 'https:',
-    path: '/api/fetch/folder',
+    path: '/api/user/folders',
   }
 
   beforeAll(async () => {
-    clientPG = await initPG('test');
-    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
-    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'folder02')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'folder02')`);
   });
 
   afterAll(async () => {
-    await clientPG.query('TRUNCATE TABLE folder CASCADE');
-    await clientPG.end();
+    await CLIENT_PG.query('TRUNCATE TABLE folder CASCADE');
   });
   
 
-  test('Returns names of all folders that belong to the logged in user', async () => {
+  test('Returns 200 and names of all folders that belong to the logged in user', async () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
+        expect(res.statusCode).toBe(200);
 
+        let data = '';
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(JSON.parse(data));
         });
@@ -46,7 +52,6 @@ describe('GET', () => {
       req.on('error', (e) => {
         reject(e);
       });
-        
       req.end();
     })
 

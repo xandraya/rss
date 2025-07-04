@@ -1,73 +1,188 @@
 # RSS and ATOM feed aggregator
+
 - endpoints:
   # session managed by cookie _session string
   # api's that require auth are only concerned with parsing the session
-  # post limit and oldest post date per subscription hardcoded on the backend
-	- auth/local/login
-	- auth/local/register
-	- auth/google
-  - api/scrape
+  # post limit per page/sub and oldest post date per sub hardcoded on the backend
+
+	- /auth/local/login
+    - GET /
+      # authorizes user through HTTP Basic Auth and generates a session string
+      - returns
+        - 302 if:
+          - user successfully authorized
+        - 400 if:
+          - credentials are invalid
+          - or Cookie string invalid
+        - 401 if:
+          - unavailable authorization type requested
+        - 403 if:
+          - user doesn't exist
+          - or invalid password
+
+	- /auth/local/register
+    - GET /
+      # returns a form
+    - POST /
+      # adds a new user to the database
+      - returns:
+        - 201 if:
+          - user successfully added to the database
+        - 400 if:
+          - invalid Content-Type
+          - or credentials are missing or invalid
+      - application/x-www-form-urlencoded params:
+        - username: string
+        - password: string
+        - email: string
+
+  - /api/user
+    - GET /info
+      # fetches user account metadata
+    - GET /folders
+      # fetches all folder names
+      - returns:
+        - 200 if:
+          - folder names successfully fetched
+      - cache schema: key 'user' field 'folderlist'
+
+	- /api/refresh
+    - POST / (auth)
+      # refreshes all subscriptions for a given folder
+      # fetches and adds posts to the database
+      # removes outdated posts and posts that go above the post limit
+      - returns
+        - 201 if:
+          - post are successfully fetched and added to the database
+          - and cache is cleared
+        - 400 if:
+          - parameters are missing or invalid
+          - or folder does not exist
+      - application/json params:
+        - folder: string
+      - cache schema: 'user.folder'
+
+  - /api/scrape
     # uses scraper module to find all advertised feeds on a site
-	- api/refresh
-    # refreshes all subscriptions for a given folder
-    # fetches and adds posts to the database
-    # removes outdated posts and posts that go above the post limit
-    - requires auth
-    - called w/ (folder)
-    - dump cache key 'user:folder' field 'flags'
-  - api/remove
-    # removes a subscription || folder
-    - requires auth
-    - called w/ (sub) || (folder)
-    - dump cache hkey 'user:folder'
-  - api/update
-    # updates status table
-    - requires auth
-    - called w/ (post, opts: { read, starred })
-    - dump cache hkey 'user:folder'
-  - api/add/folder
-    # creates a new folder
-    - requires auth
-    - called w/ (folder)
-  - api/add/sub
-    # binds a subscription to a folder
-    - requires auth
-    - called w/ (name, folder, feedurl)
-  - api/fetch/folders
-    # fetches all folder names
-    - requires auth
-    - push/update cache hkey 'user'
-  - api/fetch/posts
-    # fetches posts that belong to chosen folder subscriptions
-    - requires auth
-    - called w/ (folder, pagenum = 1, opts?: { sort?, status?: [read?, starred?] })
-    - push/update cache hash key 'user:folder:flags' field 'offset'
-- cache schema:
-  - user:folder 
-    - tables: folder, sub, post, status
-    - retunred cols: post.postid, post.title, post.content, status.stared, status.read
-- db schema:
+    - GET / (auth)
+      - returns:
+        - 200 if:
+          - all feed urls from the supplied host successfully found, parsed and returned
+        - 400 if:
+          - site param missing or invalid
+      - application/x-www-form-urlencoded params:
+        - site: string
+
+  - /api/sub
+    - POST / (auth)
+      # binds a subscription to a folder
+      - returns:
+        - 201 if:
+          - subscription to an (non)existing feed is added
+        - 400 if:
+          - parameters are missing or invalid
+          - or sub with the same name exists 
+          - or sub to the same feed exists
+          - or folder does not exist
+      - application/json params:
+        - name: string
+        - folder: string
+        - feedurl: string
+    - DELETE / (auth)
+      # removes a subscription
+      - called w/ (sub)
+      - dump cache hkey 'user.folder'
+
+  - /api/folder
+    - POST / (auth)
+      # creates a new folder
+      - returns:
+        - 201 if:
+          - new folder successfully created
+        - 400 if:
+          - parameters are missing or invalid
+          - folder with supplied name already exists
+      - application/json params:
+        - name: string
+      - dump cache hkey 'user.list'
+    - DELETE / (auth)
+      # removes a folder
+      - called w/ (folder)
+      - dump cache hkey 'user.folder'
+
+  - /api/post
+    - GET / (auth)
+      # fetches posts that belong to the suplied folder's subscriptions
+      - returns:
+        - 200 if:
+          - fetches posts that: 
+            - are not 1yr older than the oldest subscription refresh date
+            - are within the set post limit per subscription
+            - have the selected flag set
+          - and optionally sorts them
+          - and caches the query
+        - 400 if:
+          - parameters are missing
+          - or folder does not exist
+      - application/x-www-form-urlencoded params:
+        - folder: string
+        - page: number = 1
+        - sort?: alpha_asc | alpha_desc | date_asc | date_desc
+        - read?: boolean
+        - star?: boolean
+      - cache schema: key 'user.folder' fields 'flags:pagenum'
+    - POST / (auth)
+      # updates post metadata
+      - called w/ (post, opts: { read, starred })
+      - dump cache hkey 'user.folder'
+
+- DB schema:
 	# conforms to BCNF
   # has b-tree index on FKeys
-	- account | userid, username, email, password, salt
-	- folder | folderid, userid (CASCADE), name
-	- feed | feedid, url, count
-	- sub | subid, folderid (CASCADE), feedid, name, refresh_date
-	- post | postid, feedid (CASCADE), title, date, ..., content
-  - status | userid (CASCADE), postid (CASCADE), star, read
+	- account:
+    - userid: varchar(16)
+    - username: varchar(32)
+    - email: varchar(64)
+    - password: varchar(64)
+    - salt: varchar(32)
+	- folder 
+    - folderid: varchar(16)
+    - userid: varchar(16) CASCADE
+    - name: varchar(32)
+	- feed:
+    - feedid: varchar(16)
+    - url: bpchar
+    - count: smallint
+	- sub:
+    - subid: varchar(16)
+    - folderid: varchar(16) CASCADE
+    - feedid: varchar(16) 
+    - name: varchar(32)
+    - refresh_date: timestamp(0) without time zone
+	- post:
+    - postid: varchar(16)
+    - feedid: varchar(16) CASCADE
+    - title: varchar(64)
+    - date: timestamp(0) without time zone
+    - url: bpchar
+    - content: text
+    - author: varchar(64)
+    - image_title: varchar(64)
+    - image_url: bpchar
+  - status:
+    - userid: varchar(16) CASCADE
+    - postid: varchar(16) CASCADE
+    - star: boolean
+    - read: boolean
 
-# extra
-# sub rules
-# youtube/podcasts?
-# wrap feedparser into an async iterator
-# feedparser stream writting buffer
-
-/* todo
- * check js api:
+TODO:
+- google oauth
+- youtube/podcasts
+- js api:
   - AbortSignal
-  - Buffer
- * test pg and redis concurency?
- * change nodejs default cyphers
- * recheck passport auth flow
- * initialize postgres with default user for testing
-*/
+- test pg and redis concurrency
+- change nodejs default cyphers
+- wrap feedparser into an async iterator
+- feedparser stream writting buffer
+- refresh api fetchPosts functions limits
+- CACHING_ENABLED global var?

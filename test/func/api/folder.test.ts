@@ -1,9 +1,17 @@
 import * as https from 'node:https';
-import { initPG } from '../../../../src/services/db';
+import { initPG } from '../../../src/services/db';
 
 import type { Client } from 'pg';
 
-let clientPG: Client;
+let CLIENT_PG: Client;
+
+beforeAll(async () => {
+  CLIENT_PG = await initPG('test');
+});
+
+afterAll(async () => {
+  await CLIENT_PG.end();
+});
 
 describe('POST', () => {
   const options = {
@@ -14,28 +22,26 @@ describe('POST', () => {
     },
     method: 'POST',
     protocol: 'https:',
-    path: '/api/add/folder',
+    path: '/api/folder',
   }
 
   beforeAll(async () => {
-    clientPG = await initPG('test');
-    await clientPG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2b9d34170d53c39a', 'adf8c2ee050b2173', 'existingfolder')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2b9d34170d53c39a', 'adf8c2ee050b2173', 'existingfolder')`);
   });
 
   afterAll(async () => {
-    await clientPG.query('DELETE FROM folder');
-    await clientPG.end();
+    await CLIENT_PG.query('TRUNCATE TABLE folder CASCADE');
   });
 
   test('Returns 400 if parameters are missing', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
+        expect(res.statusCode).toBe(400);
 
+        let data = '';
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -44,11 +50,9 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
         { foo: "bar" }
       ));
-        
       req.end();
     })
 
@@ -58,12 +62,12 @@ describe('POST', () => {
   test('Returns 400 if folder already exists', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
+        expect(res.statusCode).toBe(400);
 
+        let data = '';
         res.on('data', (d: string) => {
           data += d;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -72,11 +76,9 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { folder: "existingfolder" }
+        { name: "existingfolder" }
       ));
-        
       req.end();
     });
 
@@ -86,12 +88,7 @@ describe('POST', () => {
   test('Returns 201 if folder is successfully added', () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
-        let data = '';
-
-        res.on('data', (d: string) => {
-          data += d;
-        });
-        
+        res.on('data', () => {});
         res.on('end', () => {
           resolve(res.statusCode);
         });
@@ -100,11 +97,9 @@ describe('POST', () => {
       req.on('error', (e) => {
         reject(e);
       });
-
       req.write(JSON.stringify(
-        { folder: "newfolder" }
+        { name: "newfolder" }
       ));
-        
       req.end();
     });
 

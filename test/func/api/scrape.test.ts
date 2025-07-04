@@ -20,7 +20,6 @@ describe('GET', () => {
         res.on('data', (chunk: Buffer) => {
           data += chunk;
         });
-        
         res.on('end', () => {
           resolve(data);
         });
@@ -29,7 +28,6 @@ describe('GET', () => {
       req.on('error', (e) => {
         reject(e);
       });
-        
       req.end();
     });
 

@@ -39,9 +39,22 @@ export interface Post {
   star: boolean | null
 }
 
+export interface FeedItem {
+  title: string
+  pubDate: Date
+  description: string
+  link: string
+  origlink: string
+  author: string
+  image: {
+    title: string
+    url: string
+  }
+}
+
 export interface NodeErrorConstructor extends ErrorConstructor {
-    new (message?: string, options?: { cause: string }): Error;
-    (message?: string, options?: { cause: string} ): Error;
+  new (message?: string, options?: { cause: string }): Error;
+  (message?: string, options?: { cause: string} ): Error;
 }
 
 // JWT

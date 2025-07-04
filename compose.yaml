@@ -69,7 +69,7 @@ services:
         target: /var/lib/postgresql/data
 
   cache:
-    command: ["redis-server", "--port", "6567", "--save", "60", "1"]
+    command: ["redis-server", "--port", "6567", "--save", "60", "2"]
     image: redis:alpine
     networks:
       - custom

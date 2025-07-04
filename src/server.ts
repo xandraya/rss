@@ -1,7 +1,7 @@
 import * as https from 'node:https';
 import * as fs from 'node:fs';
 
-import * as db from './services/db';
+import { initHTTPClient, initPG, initRD, createTables, dropTables } from './services/db';
 import { sendMessage } from './services/misc';
 import { handle404, handle500 } from './services/error';
 
@@ -9,19 +9,23 @@ import type { SystemError } from './types.d';
 import type { Client } from 'pg';
 import type HTTPClient from '76a01a3490137f87';
 
+let CLIENT: HTTPClient;
+let CLIENT_PG: Client;
+let CLIENT_RD: any;
+
 export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
-  let client: HTTPClient;
-  let clientPG: Client;
-  let clientRedis: any;
   if (!process.env._JWT_KEY) throw new Error('JWT Key not initialized');
 
   //const tlsSessionStore = new Map<string, Buffer>();
   if (wrkID !== CLUSTER_COUNT+2) {
-    clientPG = wrkID === CLUSTER_COUNT+1 ? await db.initPG('test') : await db.initPG('server');
-    clientRedis = await db.initRedis();
-    client = await db.initHTTPClient();
-    //await db.dropTables(clientPG);
-    await db.createTables(clientPG);
+    CLIENT = await initHTTPClient();
+    CLIENT_PG = wrkID === CLUSTER_COUNT+1 ? await initPG('test') : await initPG('server');
+    CLIENT_RD = await initRD(wrkID === CLUSTER_COUNT+1 ? 1 : 0);
+
+    if (wrkID === 1) {
+      await dropTables(CLIENT_PG);
+      await createTables(CLIENT_PG);
+    }
   }
 
   const serverOptions = Object.freeze({
@@ -55,7 +59,7 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
 
   const server = https.createServer(serverOptions);
 
-  server.on('error', (err: SystemError) => {
+  server.on('error', async (err: SystemError) => {
     switch (err.code) {
       case 'EADDRINUSE':
         sendMessage(wrkID, 'Address in use; Retrying in 1m...');
@@ -66,13 +70,15 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
         break;
       default:
         sendMessage(wrkID, `Unhandled exception; Closing Worker ${wrkID}`);
-        db.teardown(client, clientPG, clientRedis);
+        await CLIENT.teardown();
+        await CLIENT_PG.end();
+        await CLIENT_RD.quit();
         server.close();
         process.exit(1);
     }
   });
 
-  server.on('clientError', (err: SystemError, socket) => {
+  server.on('CLIENTError', (err: SystemError, socket) => {
     switch (err.code) {
       case 'HPE_HEADER_OVERFLOW':
         socket.writable && socket.end('HTTP/1.1 431 Request Header Fields Too Large\r\n\r\n');
@@ -127,17 +133,16 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
         // default endpoints
         switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
           // auth
-          case '/auth/local/login': await (require('./auth/local/login')).handle(req, res, clientPG); break;
-          case '/auth/local/register': await (require('./auth/local/register')).handle(req, res, clientPG); break;
+          case '/auth/local/login': await (require('./auth/local/login')).handle(req, res, CLIENT_PG); break;
+          case '/auth/local/register': await (require('./auth/local/register')).handle(req, res, CLIENT_PG); break;
 
           // api
-          case '/api/secret': await (require('./api/secret')).handle(req, res, clientPG, clientRedis); break;
-          case '/api/scrape': await (require('./api/scrape')).handle(req, res, client, clientPG); break;
-          case '/api/add/folder': await (require('./api/add/folder')).handle(req, res, clientPG); break;
-          case '/api/add/sub': await (require('./api/add/sub')).handle(req, res, clientPG); break;
-          case '/api/refresh': await (require('./api/refresh')).handle(req, res, client, clientPG); break;
-          case '/api/fetch/folder': await (require('./api/fetch/folder')).handle(req, res, clientPG); break;
-          case '/api/fetch/post': await (require('./api/fetch/post')).handle(req, res, clientPG); break;
+          case '/api/user/folders': await (require('./api/user/folders')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
+          case '/api/refresh': await (require('./api/refresh')).handle(req, res, CLIENT, CLIENT_PG, CLIENT_RD); break;
+          case '/api/scrape': await (require('./api/scrape')).handle(req, res, CLIENT, CLIENT_PG); break;
+          case '/api/sub': await (require('./api/sub')).handle(req, res, CLIENT_PG); break;
+          case '/api/folder': await (require('./api/folder')).handle(req, res, CLIENT_PG); break;
+          case '/api/post': await (require('./api/post')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
 
           // ROOT
           case '/':
@@ -152,8 +157,10 @@ export default async function initServer(wrkID: number, CLUSTER_COUNT: number) {
     }
   });
 
-  server.on('close', () => {
-    db.teardown(client, clientPG, clientRedis);
+  server.on('close', async () => {
+    await CLIENT.teardown();
+    await CLIENT_PG.end();
+    await CLIENT_RD.quit();
     sendMessage(wrkID, 'Server closed');
   });
 

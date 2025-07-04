@@ -1,3 +1,4 @@
+import { hash } from 'node:crypto';
 import FeedParser from 'feedparser';
 import { handle302, handle400, handle405 } from '../services/error';
 import verifySession from '../services/session';
@@ -5,22 +6,9 @@ import verifySession from '../services/session';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 import type HTTPClient from '76a01a3490137f87';
-import { hash } from 'crypto';
+import type { FeedItem } from '../types';
 
 const SUB_POST_LIMIT = Number(process.env._SUB_POST_LIMIT) || 50;
-
-interface FeedItem {
-  title: string
-  pubDate: Date
-  description: string
-  link: string
-  origlink: string
-  author: string
-  image: {
-    title: string
-    url: string
-  }
-}
 
 export async function fetchPosts(url: URL, client: HTTPClient): Promise<FeedItem[]> {
   return new Promise((resolve, reject) => {
@@ -56,7 +44,7 @@ export async function fetchPosts(url: URL, client: HTTPClient): Promise<FeedItem
   });
 }
 
-async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTTPClient, clientPG: Client, userid: string): Promise<void> {
+async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTTPClient, clientPG: Client, clientRD: any, userid: string): Promise<void> {
   {
     req.setEncoding('utf8')
     let data: string = '';
@@ -126,24 +114,27 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
 \ \ \ \ DELETE FROM post USING batch WHERE post.postid = batch.postid`)
     }
   }
+  
+  // dump cache
+  await clientRD.del(`${userid}.${folderid}`);
 
   res.statusCode = 201;
   res.end();
 }
 
-export async function handle(req: IncomingMessage, res: ServerResponse, client: HTTPClient, clientPG: Client): Promise<void> {
+export async function handle(req: IncomingMessage, res: ServerResponse, client: HTTPClient, clientPG: Client, clientRD: any): Promise<void> {
   res.strictContentLength = true;
 
   try {
     var userid = await verifySession(req, clientPG);
     if (!userid)
-      return  handle302(res, `/auth/local/login`, req.url || '/');
+      return handle302(res, `/auth/local/login`, req.url || '/');
   } catch(e: any) {
     return handle400(res, e.message);
   }
 
   switch (req.method) {
-    case 'POST': handlePOST(req, res, client, clientPG, userid); break;
+    case 'POST': handlePOST(req, res, client, clientPG, clientRD, userid); break;
     default: handle405(res);
   }
 }

@@ -8,6 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
 async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Client) {
+  // attempt any of the available authorization methods
   try {
     var userid = await httpBasicAuth(req, clientPg);
   } catch (e: any) {
@@ -23,6 +24,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
     }
   }
 
+  // set the session string
   const expiry = new Date;
   expiry.setMonth(expiry.getMonth()+24);
   const token = new JWT({ _userid: userid })

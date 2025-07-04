@@ -1,0 +1,49 @@
+import { handle302, handle400, handle405 } from '../../services/error';
+import verifySession from '../../services/session';
+import { CACHE_ENABLED } from '../../services/db';
+
+import type { IncomingMessage, ServerResponse } from 'http';
+import type { Client } from 'pg';
+
+async function handleGET(res: ServerResponse, clientPG: Client, clientRD: any, userid: string): Promise<void> {
+  let superkey = userid;
+  let key = 'folders';
+
+  // first attempt fetching from cache
+  if (CACHE_ENABLED) {
+    const cachedData: string = await clientRD.hGet(superkey, key);
+    if (cachedData) {
+      console.log('/user/folders CACHE HIT');
+
+      res.statusCode = 200;
+      res.end(cachedData);
+      return;
+    }
+  }
+  console.log('/user/folders CACHE MISS');
+
+  const folders: string[] = await clientPG.query(`SELECT name FROM folder WHERE userid = '${userid}'`).then(r => r.rows.map(entry => entry.name));
+
+  if (CACHE_ENABLED)
+    await clientRD.hSet(superkey, key, JSON.stringify(folders));
+
+  res.statusCode = 200;
+  res.end(JSON.stringify(folders));
+}
+
+export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any): Promise<void> {
+  res.strictContentLength = true;
+
+  try {
+    var userid = await verifySession(req, clientPG);
+    if (!userid)
+      return handle302(res, `/auth/local/login`, req.url || '/');
+  } catch(e: any) {
+    return handle400(res, e.message);
+  }
+
+  switch (req.method) {
+    case 'GET': handleGET(res, clientPG, clientRD, userid); break;
+    default: handle405(res);
+  }
+}

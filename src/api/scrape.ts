@@ -50,11 +50,11 @@ export function parseFeeds(url: URL, html: string): Array<{ title?: string; href
 async function handleGET(req: IncomingMessage, res: ServerResponse, client: HTTPClient): Promise<void> {
   let url = new URL(`http://localhost${req.url}`);
   const site = url.searchParams.get('site');
-  if (!site) return handle400(res, 'URL for the feed host not supplied');
+  if (!site) return handle400(res, 'Feed host URL not supplied');
   try {
     url = new URL(site);
   } catch(e) {
-    return handle400(res, 'Supplied URL malformed');
+    return handle400(res, 'Feed host URL malformed');
   }
 
   const html = await fetchHtml(url, client);
@@ -70,7 +70,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, client: 
   try {
     const userid = await verifySession(req, clientPg);
     if (!userid)
-      return  handle302(res, `/auth/local/login`, req.url || '/');
+      return handle302(res, `/auth/local/login`, req.url || '/');
   } catch(e: any) {
     return handle400(res, e.message);
   }

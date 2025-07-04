@@ -1,22 +1,22 @@
 import { fetchPosts } from '../../../src/api/refresh';
-import { initHTTPClient, initPG } from '../../services/db';
+import { initHTTPClient } from '../../services/db';
 
-import type { Client } from 'pg';
 import type HTTPClient from '76a01a3490137f87';
 
-let client: HTTPClient
-let clientPG: Client;
+let CLIENT: HTTPClient
 
 beforeAll(async () => {
-  clientPG = await initPG('test');
-  client = await initHTTPClient();
-  await client.bootup();
+  CLIENT = await initHTTPClient();
+});
+
+afterAll(async () => {
+  await CLIENT.teardown();
 });
 
 describe('fetchPosts', () => {
   test('Successfully fetches and parses valid RSS/ATOM syntax', async () => {
     const url = new URL('https://app:8082/api/blob/unit_refresh.xml');
-    let posts = await fetchPosts(url, client);
+    let posts = await fetchPosts(url, CLIENT);
 
     expect(posts.length).toBe(4);
     expect(posts[0].title).toBe('Star City');
@@ -24,9 +24,4 @@ describe('fetchPosts', () => {
     expect(posts[2].title).toBe('The Engine That Does More');
     expect(posts[3].title).toBe('Astronauts\' Dirty Laundry');
   });
-});
-
-afterAll(async () => {
-  await clientPG.end();
-  await client.teardown();
 });

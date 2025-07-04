@@ -36,7 +36,7 @@ async function handleGET(res: ServerResponse) {
 
 async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Client) {
   const scrypt = promisify(crypto.scrypt);
-  if (req.headersDistinct.encoding && req.headersDistinct.encoding[0] !== 'application/x-www-form-urlencoded') { handle400(res, 'Invalid encoding'); return; }
+  if (req.headersDistinct.encoding && req.headersDistinct.encoding[0] !== 'application/x-www-form-urlencoded') { handle400(res, 'Invalid content type'); return; }
 
   req.setEncoding('utf8')
   let data: string = '';
