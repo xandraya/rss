@@ -10,6 +10,7 @@ import type { Client } from 'pg';
 import type HTTPClient from '76a01a3490137f87';
 import type { FeedItem } from '../types';
 
+// setup custom limits for the testing endpoint
 const AGE_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? process.env._AGE_POST_LIMIT! : '1 year';
 const SUB_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? Number(process.env._SUB_POST_LIMIT) : 3;
 
@@ -123,7 +124,7 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
   }
   
   // dump cache
-  await clientRD.del(`${userid}.${folderid}`);
+  await clientRD.del(`${userid}:${folderid}`);
 
   res.statusCode = 201;
   res.end();

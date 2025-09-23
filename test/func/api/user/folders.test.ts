@@ -1,16 +1,19 @@
 import * as https from 'node:https';
-import { initPG } from '../../../../src/services/db';
+import { initPG, initRD } from '../../../../src/services/db';
 
 import type { Client } from 'pg';
 
 let CLIENT_PG: Client;
+let CLIENT_RD: any;
 
 beforeAll(async () => {
   CLIENT_PG = await initPG('test');
+  CLIENT_RD = await initRD(1);
 });
 
 afterAll(async () => {
   await CLIENT_PG.end();
+  await CLIENT_RD.quit();
 });
 
 describe('GET', () => {
@@ -56,5 +59,35 @@ describe('GET', () => {
     })
 
     return expect(request).resolves.toEqual(['folder01', 'folder02']);
+  });
+
+  test('Returns 200 and caches the query', async () => {
+    const request = new Promise((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(200);
+
+        let data = '';
+        res.on('data', (d: string) => {
+          data += d;
+        });
+        res.on('end', () => {
+          resolve(JSON.parse(data));
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.end();
+    })
+
+    return request.then(async (res) => {
+      await CLIENT_RD.hMembers('adf8c2ee050b2173:folderlist').then((r: string[]) => { 
+        expect(r.length).toBe(2);
+        expect(r[0]).toBe('folder01');
+        expect(r[1]).toBe('folder02');
+      });
+      expect(res).toBe(200);
+    });
   });
 });

@@ -5,17 +5,16 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
 async function handleGET(res: ServerResponse, clientPG: Client, clientRD: any, userid: string): Promise<void> {
-  let superkey = userid;
-  let key = 'folders';
+  let key = `${userid}:folderlist`;
 
   // first attempt fetching from cache
   if (Number(process.env._CACHING)) {
-    const cachedData: string = await clientRD.hGet(superkey, key);
+    const cachedData: string[] = await clientRD.sMembers(key);
     if (cachedData) {
       console.log('/user/folders CACHE HIT');
 
       res.statusCode = 200;
-      res.end(cachedData);
+      res.end(JSON.stringify(cachedData));
       return;
     }
   }
@@ -24,7 +23,7 @@ async function handleGET(res: ServerResponse, clientPG: Client, clientRD: any, u
   const folders: string[] = await clientPG.query(`SELECT name FROM folder WHERE userid = '${userid}'`).then(r => r.rows.map(entry => entry.name));
 
   if (Number(process.env._CACHING))
-    await clientRD.hSet(superkey, key, JSON.stringify(folders));
+    await clientRD.sAdd(key, folders);
 
   res.statusCode = 200;
   res.end(JSON.stringify(folders));

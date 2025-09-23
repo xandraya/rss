@@ -5,7 +5,7 @@ import { random } from '../services/misc';
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
-async function handlePOST(req: IncomingMessage, res: ServerResponse, userid: string, clientPG: Client) {
+async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any, userid: string) {
   req.setEncoding('utf8')
   {
     let data: string = '';
@@ -25,34 +25,78 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, userid: str
   while (await clientPG.query(`SELECT name FROM folder WHERE folderid = '${folderid}'`).then(r => r.rows.length > 0))
     folderid = (parseInt(userid, 16)+1).toString(16);
   await clientPG.query(`INSERT INTO folder(folderid, userid, name) VALUES ('${folderid}', '${userid}', '${serialized.name}')`);
+  
+  // dump cache
+  await clientRD.del(`${userid}:folderlist`);
 
   res.statusCode = 201;
   res.end();
 }
 
-async function handleDELETE(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  req.setEncoding('utf8')
-  {
-    let data: string = '';
-    for await (const chunk of req) data += chunk;
-    try {
-      var serialized = JSON.parse(data);
-      if (!serialized.name) throw new Error();
-    } catch(e: any) {
-      return handle400(res, 'Request params could not be parsed');
+async function handleDELETE(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any, userid: string): Promise<void> {
+  try {
+    const params = new URL(req.url || '/', 'https://localhost').searchParams;
+    var opts = {
+      folder: params.get('name') || undefined,
+    };
+    if (!opts.folder) throw new Error();
+  } catch(e: any) {
+    return handle400(res, 'Request params could not be parsed');
+  }
+
+  // throw error if folder does not exist
+  const folderid: string | undefined = await clientPG.query(`SELECT folderid FROM folder WHERE userid = '${userid}' AND name = '${opts.folder}'`)
+    .then(r => r.rows[0] ? r.rows[0].folderid : undefined);
+  if (!folderid)
+    return handle400(res, 'Folder does not exist');
+
+  let subs: { subid: string, feedid: string }[];
+  subs = await clientPG.query(`SELECT sub.subid, sub.feedid FROM folder INNER JOIN subscription sub ON folder.folderid = sub.folderid \
+\ \ WHERE folder.folderid = '${folderid}'`).then(r => r.rows);
+
+  // will hold all the posts that have the starred entry in the status table,
+  // but don't belong to any of the users subscriptions
+  let batch: string[] = [];
+
+  for (let i=0; i<subs.length; i++) {
+    // remove the subscription
+    await clientPG.query(`DELETE FROM subscription WHERE subid = '${subs[i].subid}'`);
+
+    // update the feed table
+    await clientPG.query(`UPDATE feed SET count = count-1 WHERE feedid = '${subs[i].feedid}'`);
+    if (await clientPG.query(`SELECT count FROM feed WHERE feedid = '${subs[i].feedid}'`).then(r => Number(r.rows[0].count) === 0)) {
+      await clientPG.query(`DELETE FROM feed WHERE feedid = '${subs[i].feedid}'`);
+      continue;
+    }
+
+    // check if user has any other subscriptions to the same feed...
+    let more = await clientPG.query(`SELECT feedid FROM account INNER JOIN folder ON account.userid = folder.userid \
+\ \ \ INNER JOIN subscription sub ON folder.folderid = sub.folderid WHERE sub.feedid = '${subs[i].feedid}'`)
+      .then(r => r.rows.length !== 0);
+
+    // ...if not, starred entries from the status table can be safely removed
+    if (!more) {
+      const query = `SELECT post.postid \
+\ \ \ \ \ FROM feed INNER JOIN post ON feed.feedid = post.feedid INNER JOIN status ON post.postid = status.postid \ 
+\ \ \ \ \ WHERE feed.feedid = '${subs[i].feedid}' AND status.star AND status.userid = '${userid}'`;
+      await clientPG.query(query).then(r => batch.push(...r.rows.map(e => e.postid)));
     }
   }
 
-  /* for each of the supplied subscriptions id's modify entries in the feed table by
-    * decrementing the counter value
-    * removing the entry if counter value reaches 0
-  */
+  await clientPG.query(`DELETE FROM folder WHERE folderid = '${folderid}' AND userid = '${userid}'`);
+  if (batch.length)
+    await clientPG.query(`DELETE FROM status WHERE userid = '${userid}' AND postid IN (${batch.map(e => `'${e}'`).toString()})`);
+ 
+  // dump cache
+  await clientRD.del(`${userid}:${folderid}`);
 
-  // handle edge case of users having stared posts that don't belong to any of their subscriptions
+  res.statusCode = 204;
+  res.end();
 }
 
-export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client): Promise<void> {
+export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any): Promise<void> {
   res.strictContentLength = true;
+
   try {
     var userid = await verifySession(req, clientPG);
     if (!userid)
@@ -62,8 +106,8 @@ export async function handle(req: IncomingMessage, res: ServerResponse, clientPG
   }
 
   switch (req.method) {
-    case 'GET': break;
-    case 'POST': handlePOST(req, res, userid, clientPG); break;
+    case 'POST': handlePOST(req, res, clientPG, clientRD, userid); break;
+    case 'DELETE': handleDELETE(req, res, clientPG, clientRD, userid); break;
     default: handle405(res);
   }
 }

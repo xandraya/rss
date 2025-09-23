@@ -99,7 +99,7 @@ describe('POST', () => {
   });
 
   test('Returns 201 if posts are successfully added and cache is dumped', async () => {
-    await CLIENT_RD.hSet('adf8c2ee050b2173.2', 'foo', 'bar');
+    await CLIENT_RD.hSet('adf8c2ee050b2173:2', 'foo', 'bar');
 
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
@@ -131,6 +131,6 @@ describe('POST', () => {
     expect(feed02.length).toBe(1);
     expect(feed02[0].postid).toBe('3f2730225463f8f5');
 
-    return expect(CLIENT_RD.hKeys('adf8c2ee050b2173.2')).rejects;
+    return expect(CLIENT_RD.hKeys('adf8c2ee050b2173:2')).rejects;
   });
 });

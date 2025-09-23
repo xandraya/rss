@@ -5,8 +5,8 @@
   # api's that require auth are only concerned with parsing the session
   # post limit per page/sub and oldest post date per sub hardcoded for every user
 
-	- /auth/local/login
-    - GET /
+	- /auth/local
+    - GET /login
       # authorizes user through HTTP Basic Auth and generates a session string
       - returns
         - 302 if:
@@ -19,11 +19,9 @@
         - 403 if:
           - user doesn't exist
           - or invalid password
-
-	- /auth/local/register
-    - GET /
+    - GET /register
       # returns a form
-    - POST /
+    - POST /register
       # adds a new user to the database
       - returns:
         - 201 if:
@@ -44,13 +42,14 @@
       - returns:
         - 200 if:
           - folder names successfully fetched
-      - cache schema: key 'user' field 'folderlist'
+      - cache: key 'user:folderlist'
 
 	- /api/refresh
     - POST / (auth)
       # refreshes all subscriptions for a given folder
       # fetches and adds posts to the database
-      # removes outdated posts and posts that go above the post limit
+      # removes non-stared posts from the database that go above the determined post limits
+        # removal of stared posts is handled by DELETE /api/folder instead
       - returns
         - 201 if:
           - post are successfully fetched and added to the database
@@ -60,7 +59,7 @@
           - or folder does not exist
       - application/json params:
         - folder: string
-      - cache schema: 'user.folder'
+      - cache: 'user:folder'
 
   - /api/scrape
     # uses scraper module to find all advertised feeds on a site
@@ -82,7 +81,7 @@
         - 400 if:
           - parameters are missing or invalid
           - or sub with the same name exists 
-          - or sub to the same feed exists
+          - or sub to the same feed for the current folder exists
           - or folder does not exist
       - application/json params:
         - name: string
@@ -91,7 +90,7 @@
     - DELETE / (auth)
       # removes a subscription
       - called w/ (sub)
-      - dump cache hkey 'user.folder'
+      - dump cache hkey 'user:folder'
 
   - /api/folder
     - POST / (auth)
@@ -99,16 +98,27 @@
       - returns:
         - 201 if:
           - new folder successfully created
+          - and cache is dumped
         - 400 if:
           - parameters are missing or invalid
           - folder with supplied name already exists
       - application/json params:
         - name: string
-      - dump cache hkey 'user.list'
+      - cache: key '{userid}:folderlist'
     - DELETE / (auth)
       # removes a folder
-      - called w/ (folder)
-      - dump cache hkey 'user.folder'
+      # removes entries from the status table
+      - returns:
+        - 204 if:
+          - folder and its subscriptions removed
+          - and corresponding status entries are removed
+          - and cache is dumped
+        - 400 if:
+          - parameters are missing or invalid
+          - folder does not exists
+      - application/x-www-form-urlencoded params:
+        - name: string
+      - cache: key '{userid}:{folderid}'
 
   - /api/post
     - GET / (auth)
@@ -130,11 +140,11 @@
         - sort?: alpha_asc | alpha_desc | date_asc | date_desc
         - read?: boolean
         - star?: boolean
-      - cache schema: key 'user.folder' fields 'flags:pagenum'
+      - cache: key 'userid:folderid' fields 'flags:pagenum'
     - POST / (auth)
       # updates post metadata
       - called w/ (post, opts: { read, starred })
-      - dump cache hkey 'user.folder'
+      - dump cache hkey 'userid:folderid'
 
 - DB schema:
 	# conforms to BCNF
@@ -147,7 +157,7 @@
     - salt: varchar(32)
 	- folder 
     - folderid: varchar(16)
-    - userid: varchar(16) CASCADE
+    - userid: varchar(16)
     - name: varchar(32)
 	- feed:
     - feedid: varchar(16)
@@ -155,7 +165,7 @@
     - count: smallint
 	- sub:
     - subid: varchar(16)
-    - folderid: varchar(16) CASCADE
+    - folderid: varchar(16)
     - feedid: varchar(16) 
     - name: varchar(32)
     - refresh_date: timestamp(0) without time zone
@@ -175,6 +185,12 @@
     - star: boolean
     - read: boolean
 
+- CACHE schema:
+  - {userid}:folderlist
+  - {userid}:{folderid}
+    - {flags}:{pagenum}
+
+
 TODO:
 - google oauth
 - youtube/podcasts
@@ -185,3 +201,4 @@ TODO:
 - wrap feedparser into an async iterator
 - feedparser stream writting buffer
 - refresh api fetchPosts functions limits
+- user removal

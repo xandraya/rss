@@ -9,7 +9,7 @@
   },
   "author": "me:)",
   "license": "ISC",
-  "description": "backend for an rss/atom feed aggregator",
+  "description": "sample backend API for an rss/atom feed aggregator",
   "devDependencies": {
     "@types/feedparser": "^2.2.8",
     "@types/jest": "^29.5.12",

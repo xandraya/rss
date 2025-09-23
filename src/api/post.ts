@@ -7,6 +7,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 import type { Post } from '../types';
 
+// setup custom limits for the testing endpoint
 const AGE_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? process.env._AGE_POST_LIMIT! : '1 year';
 const SUB_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? Number(process.env._SUB_POST_LIMIT) : 3;
 const PAGE_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? Number(process.env._PAGE_POST_LIMIT): 2;
@@ -36,7 +37,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
   // first attempt fetching from cache
   if (Number(process.env._CACHING)) {
     // create redis key
-    superkey = `${userid}.${folderid}`;
+    superkey = `${userid}:${folderid}`;
     key = '';
     switch (opts.sort) {
       case 'alpha_asc': key += '1000'; break;
@@ -112,7 +113,6 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
       key += i;
 
       await clientRD.hSet(superkey!, key, JSON.stringify(posts.slice((i-1)*PAGE_POST_LIMIT, i*PAGE_POST_LIMIT)));
-      clientRD.emit('end');
     }
   }
 
