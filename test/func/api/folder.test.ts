@@ -135,15 +135,10 @@ describe('DELETE', () => {
 
   afterEach(async () => {
     await CLIENT_PG.query('TRUNCATE TABLE folder, feed, subscription, post, status CASCADE');
-
-    for await (const key of CLIENT_RD.scanIterator({ TYPE: "hash" }))
-      await CLIENT_RD.del(key);
   });
 
   test('Returns 400 if parameters are missing', () => {
     const request = new Promise((resolve, reject) => {
-      options.path = '/api/folder';
-
       const req = https.request(options, (res) => {
         expect(res.statusCode).toBe(400);
 
@@ -254,7 +249,7 @@ describe('DELETE', () => {
     });
   });
 
-  test('Removes entries from the status table corresponding to posts that don\'t belong to any of the users subs removed', async () => {
+  test('Removes entries from the status table corresponding to posts that don\'t belong to any of the users subs', async () => {
     await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('0', 'https://localhost/null', 9)`);
     await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://localhost/null', 9)`);
     await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('0', '0', '0', 'sub01', 'Mon, 01 Jan 1970 00:00:00 GMT')`);

@@ -89,9 +89,19 @@
         - feedurl: string
     - DELETE / (auth)
       # removes a subscription
-      # folder and sub name used as unique indentifiers
-      - called w/ (sub)
-      - dump cache hkey 'user:folder'
+      - returns:
+        - 204 if:
+          - subscription successfully removed
+          - and corresponding status entries are removed
+          - and cache is dumped
+        - 400 if:
+          - parameters are missing or invalid
+          - folder does not exist
+          - subscription does not exist
+      - application/x-www-form-urlencoded params:
+        - name: string
+        - folder: string
+      - cache: key '{userid}:{folderid}'
 
   - /api/folder
     - POST / (auth)
@@ -116,7 +126,7 @@
           - and cache is dumped
         - 400 if:
           - parameters are missing or invalid
-          - folder does not exists
+          - folder does not exist
       - application/x-www-form-urlencoded params:
         - name: string
       - cache: key '{userid}:{folderid}'

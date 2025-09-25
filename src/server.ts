@@ -139,7 +139,7 @@ export default async function initServer(wrkID: number) {
           case '/api/user/folders': await (require('./api/user/folders')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
           case '/api/refresh': await (require('./api/refresh')).handle(req, res, CLIENT, CLIENT_PG, CLIENT_RD); break;
           case '/api/scrape': await (require('./api/scrape')).handle(req, res, CLIENT, CLIENT_PG); break;
-          case '/api/sub': await (require('./api/sub')).handle(req, res, CLIENT_PG); break;
+          case '/api/sub': await (require('./api/sub')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
           case '/api/folder': await (require('./api/folder')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
           case '/api/post': await (require('./api/post')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
 
