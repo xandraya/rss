@@ -22,7 +22,7 @@ describe('GET', () => {
     hostname: 'app',
     port: 8081,
     headers: {
-      'Cookie': '_session="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJfdXNlcmlkIjoiYWRmOGMyZWUwNTBiMjE3MyIsImlzcyI6ImxvY2FsaG9zdCIsImF1ZCI6ImNsaWVudCIsInN1YiI6InNlc3Npb24iLCJpYXQiOjE3NDc2NDU3MjgsImV4cCI6MTgxMDcxNzcyOH0.yz2GqqSA1f9TbWIW54c7qPydqWS5AqZCsUmQOq2jjow"',
+      'Cookie': `_session="${process.env._TEST_SESSION}"`,
     },
     method: 'GET',
     protocol: 'https:',
@@ -98,7 +98,7 @@ describe('GET', () => {
     return expect(request).resolves.toMatch(new RegExp('Folder does not exist'));
   });
 
-  test('Returns 200 and fetches posts that are not 1yr older than the oldest subscriptions refresh_date', async () => {
+  test('Fetches posts that are not 1yr older than the oldest subscriptions refresh_date', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'ignored', 'Mon, 01 Jan 1970 00:00:00 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '1', 'added', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('3', '2', 'added', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
@@ -133,7 +133,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and fetches only SUB_POST_LIMIT amount of posts per subscription', async () => {
+  test('Fetches only SUB_POST_LIMIT amount of posts per subscription', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'added', 'Mon, 01 Jun 1971 00:00:04 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '1', 'added', 'Mon, 01 Jun 1971 00:00:03 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('3', '1', 'added', 'Mon, 01 Jun 1971 00:00:02 GMT', 'null')`);
@@ -170,7 +170,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and fetches only posts that have the READ flag', async () => {
+  test('Fetches only posts that have the READ flag', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'added', 'Mon, 01 Jun 1971 00:00:04 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '1', 'ignored', 'Mon, 01 Jun 1971 00:00:03 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('3', '2', 'added', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
@@ -207,7 +207,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and fetches only posts that have the STAR flag', async () => {
+  test('Fetches only posts that have the STAR flag', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'added', 'Mon, 01 Jun 1971 00:00:04 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '1', 'ignored', 'Mon, 01 Jun 1971 00:00:03 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('3', '2', 'added', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
@@ -244,7 +244,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and sorts fetched posts ascending alphabetically', async () => {
+  test('Sorts fetched posts ascending alphabetically', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'A', 'Mon, 01 Jun 1971 00:00:01 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '2', 'B', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
 
@@ -278,7 +278,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and sorts fetched posts descending alphabetically', async () => {
+  test('Sorts fetched posts descending alphabetically', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'A', 'Mon, 01 Jun 1971 00:00:01 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '2', 'B', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
 
@@ -312,7 +312,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and sorts fetched posts ascending by date', async () => {
+  test('Sorts fetched posts ascending by date', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'A', 'Mon, 01 Jun 1971 00:00:01 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '2', 'B', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
 
@@ -346,7 +346,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and sorts fetched posts descending by date', async () => {
+  test('Sorts fetched posts descending by date', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'A', 'Mon, 01 Jun 1971 00:00:01 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '2', 'B', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
 
@@ -380,7 +380,7 @@ describe('GET', () => {
     });
   });
 
-  test('Returns 200 and caches the query', async () => {
+  test('Caches the query', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'post01', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '2', 'post02', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
 
@@ -388,6 +388,8 @@ describe('GET', () => {
       options.path = '/api/post?folder=folder01';
       
       const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(200);
+
         res.on('data', () => {});
         res.on('end', () => {
           resolve(res.statusCode);
@@ -400,13 +402,12 @@ describe('GET', () => {
       req.end();
     });
     
-    return request.then(async (res) => {
-      await CLIENT_RD.hKeys('adf8c2ee050b2173:1').then((r: string[]) => expect(r[0]).toBe('000100:1'));
-      expect(res).toBe(200);
+    return request.then(async () => {
+      expect(CLIENT_RD.hKeys('adf8c2ee050b2173:1')).resolves.toEqual(['000100:1']);
     });
   });
   
-  test('Returns 200 and an empty array if no posts are found', async () => {
+  test('Returns an empty array if no posts are found', async () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'post01', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '2', 'post02', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
 
@@ -434,6 +435,231 @@ describe('GET', () => {
     return request.then(res => {
       if (!isPostArray(res)) throw new Error();
       expect(res.length).toBe(0);
+    });
+  });
+});
+
+describe('POST', () => {
+  const options = {
+    hostname: 'app',
+    port: 8081,
+    headers: {
+      'Cookie': `_session="${process.env._TEST_SESSION}"`,
+    },
+    method: 'POST',
+    protocol: 'https:',
+    path: '/api/post',
+  }
+
+  beforeAll(async () => {
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('0', 'https://app:8082/null.xml', 1)`);
+    await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('0', '0', '0', 'sub01', 'Mon, 01 Jan 1972 00:00:00 GMT')`);
+    await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('0', '0', 'post01', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/post01')`);
+  });
+
+  afterEach(async () => {
+    await CLIENT_PG.query('TRUNCATE TABLE status CASCADE');
+  });
+
+  afterAll(async () => {
+    await CLIENT_PG.query('TRUNCATE TABLE folder, feed, subscription, post, status CASCADE');
+  });
+  
+  test('Returns 400 if parameters are missing', () => {
+    const request = new Promise((resolve, reject) => {
+      const req = https.request(options, (res) => { 
+        expect(res.statusCode).toBe(400);
+
+        let data = '';
+        res.on('data', (d: string) => {
+          data += d;
+        });
+        res.on('end', () => {
+          resolve(data);
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { foo: "bar" }
+      ));
+      req.end();
+    })
+
+    return expect(request).resolves.toMatch(new RegExp('Request params could not be parsed'));
+  });
+
+  test('Returns 400 if post with the supplied url does not exist', () => {
+    const request = new Promise((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(400);
+
+        let data = '';
+        res.on('data', (d: string) => {
+          data += d;
+        });
+        res.on('end', () => {
+          resolve(data);
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { url: "null" }
+      ));
+      req.end();
+    });
+
+    return expect(request).resolves.toMatch(new RegExp('Post with the supplied url does not exist'));
+  });
+
+  test('Returns 400 if post doesn\'t belong to any user subscriptions', async () => {
+    await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://app:8082/null.xml', 1)`);
+    await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('1', '1', 'post02', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/post02')`);
+
+    const request = new Promise((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(400);
+
+        let data = '';
+        res.on('data', (d: string) => {
+          data += d;
+        });
+        res.on('end', () => {
+          resolve(data);
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { url: "http://localhost/post02" }
+      ));
+      req.end();
+    });
+
+    return expect(request).resolves.toMatch(new RegExp('Post doesn\'t belong to any user subscriptions'));
+  });
+
+  test('Adds a new entry to the status table', async () => {
+    const request = new Promise<void>((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(201);
+
+        res.on('data', () => {});
+        res.on('end', () => {
+          resolve();
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { url: "http://localhost/post01", read: true }
+      ));
+      req.end();
+    });
+
+    return request.then(async () => {
+      await CLIENT_PG.query(`SELECT * FROM status WHERE postid = '0'`).then(r => {
+        expect(r.rows[0].userid).toBe(process.env._TEST_USERID);
+        expect(r.rows[0].read).toBe(true);
+        expect(r.rows[0].star).toBe(false);
+      });
+    });
+  });
+
+  test('Updates an existing entry in the status table', async () => {
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
+
+    const request = new Promise<void>((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(201);
+
+        res.on('data', () => {});
+        res.on('end', () => {
+          resolve();
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { url: "http://localhost/post01", star: false }
+      ));
+      req.end();
+    });
+
+    return request.then(async () => {
+      await CLIENT_PG.query(`SELECT * FROM status WHERE postid = '0'`).then(r => {
+        expect(r.rows[0].userid).toBe(process.env._TEST_USERID);
+        expect(r.rows[0].star).toBe(false);
+      });
+    });
+  });
+
+  test('Keeps the old values if no request params are supplied', async () => {
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
+
+    const request = new Promise<void>((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(201);
+
+        res.on('data', () => {});
+        res.on('end', () => {
+          resolve();
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { url: "http://localhost/post01" }
+      ));
+      req.end();
+    });
+
+    return request.then(async () => {
+      await CLIENT_PG.query(`SELECT * FROM status WHERE postid = '0'`).then(r => {
+        expect(r.rows[0].userid).toBe(process.env._TEST_USERID);
+        expect(r.rows[0].star).toBe(true);
+      });
+    });
+  });
+
+  test('Dumps the cache', async () => {
+    await CLIENT_RD.hSet('adf8c2ee050b2173:0', 'foo', 'bar');
+
+    const request = new Promise<void>((resolve, reject) => {
+      const req = https.request(options, (res) => {
+        expect(res.statusCode).toBe(201);
+
+        res.on('data', () => {});
+        res.on('end', () => {
+          resolve();
+        });
+      });
+
+      req.on('error', (e) => {
+        reject(e);
+      });
+      req.write(JSON.stringify(
+        { url: "http://localhost/post01" }
+      ));
+      req.end();
+    });
+
+    return request.then(async () => {
+      expect(CLIENT_RD.hLen('adf8c2ee050b2173:0')).resolves.toBe(0);
     });
   });
 });

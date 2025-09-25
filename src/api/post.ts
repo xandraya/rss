@@ -32,7 +32,8 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
   // throw error if folder does not exist
   const folderid: string | undefined = await clientPG.query(`SELECT folderid FROM folder WHERE userid = '${userid}' AND name = '${opts.folder}'`)
     .then(r => r.rows[0] ? r.rows[0].folderid : undefined);
-  if (!folderid) return handle400(res, 'Folder does not exist');
+  if (!folderid)
+    return handle400(res, 'Folder does not exist');
 
   // first attempt fetching from cache
   if (Number(process.env._CACHING)) {
@@ -74,9 +75,10 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
 \ \ \ \ AND post.date < sub.refresh_date \
 \ \ \ \ ${opts.read ? 'AND status.read' : ''} \
 \ \ \ \ ${opts.star ? 'AND status.star' : ''} \
+\ \ \ \ ORDER BY post.date DESC \
 \ \ \ \ LIMIT ${SUB_POST_LIMIT}`;
-    posts = posts.concat(
-      await clientPG.query(query).then(r => r.rows.map(entry => {
+    posts.push(
+      ...await clientPG.query(query).then(r => r.rows.map(entry => {
         entry.date = new Date(entry.date);
         return entry;
       }))
@@ -103,7 +105,8 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
       break;
     default:
     case 'date_desc':
-      posts.sort((a, b) => a.date > b.date ? -1 : a.date === b.date ? 0 : 1);
+      // already getting ordered during pg query
+      //posts.sort((a, b) => a.date > b.date ? -1 : a.date === b.date ? 0 : 1);
       break;
   }
 
@@ -123,6 +126,44 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPG: Cl
   res.end(JSON.stringify(posts.slice(offset, opts.page * PAGE_POST_LIMIT)));
 }
 
+async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any, userid: string): Promise<void> {
+  {
+    req.setEncoding('utf8')
+    let data: string = '';
+    for await (const chunk of req) data += chunk;
+    try {
+      var opts = JSON.parse(data);
+      if (!opts.url) throw new Error();
+    } catch(e: any) {
+      return handle400(res, 'Request params could not be parsed');
+    }
+  }
+
+  // return 400 if post with supplied url does not exist
+  const postid: string | undefined = await clientPG.query(`SELECT postid FROM post WHERE url = '${opts.url}'`)
+    .then(r => r.rows[0] ? r.rows[0].postid : undefined);
+  if (!postid)
+    return handle400(res, 'Post with the supplied url does not exist');
+  
+  // return 400 if post doesn't belong to any user subscriptions
+  const folderids = await clientPG.query(`SELECT folder.folderid FROM folder INNER JOIN subscription sub ON folder.folderid = sub.folderid \
+\ \ INNER JOIN post ON sub.feedid = post.feedid WHERE postid = '${postid}'`).then(r => r.rows.map(e => e.folderid));
+  if (!folderids.length)
+    return handle400(res, 'Post doesn\'t belong to any user subscriptions');
+
+  await clientPG.query(`INSERT INTO status (userid, postid, read, star) VALUES \
+\ \ \ ('${userid}', '${postid}', ${opts.read !== undefined ? opts.read : false}, ${opts.star !== undefined ? opts.star : false}) \
+\ \ \ ON CONFLICT (userid, postid) DO UPDATE SET (read, star) = (${opts.read !== undefined ? opts.read : 'status.read'}, \
+\ \ \ ${opts.star !== undefined ? opts.star : 'status.star'})`);
+ 
+  // dump cache
+  for (let folderid of folderids)
+    await clientRD.del(`${userid}:${folderid}`);
+
+  res.statusCode = 201;
+  res.end();
+}
+
 export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any): Promise<void> {
   res.strictContentLength = true;
 
@@ -136,6 +177,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, clientPG
 
   switch (req.method) {
     case 'GET': handleGET(req, res, clientPG, clientRD, userid); break;
+    case 'POST': handlePOST(req, res, clientPG, clientRD, userid); break;
     default: handle405(res);
   }
 }

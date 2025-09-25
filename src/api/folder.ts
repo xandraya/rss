@@ -6,25 +6,26 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
 async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any, userid: string) {
-  req.setEncoding('utf8')
   {
+    req.setEncoding('utf8')
     let data: string = '';
     for await (const chunk of req) data += chunk;
     try {
-      var serialized = JSON.parse(data);
-      if (!serialized.name) throw new Error();
+      var opts = JSON.parse(data);
+      if (!opts.name) throw new Error();
     } catch(e: any) {
       return handle400(res, 'Request params could not be parsed');
     }
   }
 
-  const exists = await clientPG.query(`SELECT folderid FROM folder WHERE name = '${serialized.name}'`).then(r => r.rows.length > 0)
-  if (exists) return handle400(res, 'Folder name already exists');
+  const exists = await clientPG.query(`SELECT folderid FROM folder WHERE name = '${opts.name}'`).then(r => r.rows.length > 0)
+  if (exists)
+    return handle400(res, 'Folder name already exists');
 
   let folderid = await random(8);
   while (await clientPG.query(`SELECT name FROM folder WHERE folderid = '${folderid}'`).then(r => r.rows.length > 0))
     folderid = (parseInt(userid, 16)+1).toString(16);
-  await clientPG.query(`INSERT INTO folder(folderid, userid, name) VALUES ('${folderid}', '${userid}', '${serialized.name}')`);
+  await clientPG.query(`INSERT INTO folder(folderid, userid, name) VALUES ('${folderid}', '${userid}', '${opts.name}')`);
   
   // dump cache
   await clientRD.del(`${userid}:folderlist`);

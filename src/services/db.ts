@@ -86,7 +86,7 @@ export async function createTables(client: pg.Client): Promise<undefined> {
 \ \ feedid varchar(16) REFERENCES feed(feedid) ON DELETE CASCADE NOT NULL, title varchar(64) NOT NULL, date timestamp(0) without time zone NOT NULL, url bpchar NOT NULL, \
 \ \ content text, author varchar(64), image_title varchar(64), image_url bpchar)`);
   await client.query(`CREATE TABLE IF NOT EXISTS status (userid varchar(16) REFERENCES account(userid) ON DELETE CASCADE NOT NULL, \
-\ \ postid varchar(16) REFERENCES post(postid) ON DELETE CASCADE NOT NULL, star boolean, read boolean)`);
+\ \ postid varchar(16) REFERENCES post(postid) ON DELETE CASCADE NOT NULL, star boolean, read boolean, CONSTRAINT pk_status PRIMARY KEY (userid, postid))`);
 }
 
 export async function dropTables(client: pg.Client): Promise<undefined> {

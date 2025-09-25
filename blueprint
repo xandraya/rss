@@ -1,4 +1,4 @@
-# RSS and ATOM feed aggregator
+# Sample RSS and ATOM feed aggregator
 
 - endpoints:
   # session managed by cookie _session string
@@ -89,6 +89,7 @@
         - feedurl: string
     - DELETE / (auth)
       # removes a subscription
+      # folder and sub name used as unique indentifiers
       - called w/ (sub)
       - dump cache hkey 'user:folder'
 
@@ -143,8 +144,19 @@
       - cache: key 'userid:folderid' fields 'flags:pagenum'
     - POST / (auth)
       # updates post metadata
-      - called w/ (post, opts: { read, starred })
-      - dump cache hkey 'userid:folderid'
+      # post url can be used as unique indentifier
+      - returns:
+        - 201 if:
+          - post metadata updated for the current user
+        - 400 if:
+          - parameters are missing
+          - or post with the supplied url does not exist
+          - or post with the supplied url does not belong to any subscriptions
+      - application/json params:
+        - url: string
+        - read?: boolean
+        - star?: boolean
+      - cache: key '{userid}:{folderid}'
 
 - DB schema:
 	# conforms to BCNF
@@ -192,8 +204,8 @@
 
 
 TODO:
+- refresh endpoint doesn't properly ignore starred posts
 - google oauth
-- youtube/podcasts
 - js api:
   - AbortSignal
 - test pg and redis concurrency
