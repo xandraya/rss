@@ -64,11 +64,9 @@ async function handleDELETE(req: IncomingMessage, res: ServerResponse, clientPG:
     await clientPG.query(`DELETE FROM subscription WHERE subid = '${subs[i].subid}'`);
 
     // update the feed table
-    await clientPG.query(`UPDATE feed SET count = count-1 WHERE feedid = '${subs[i].feedid}'`);
-    if (await clientPG.query(`SELECT count FROM feed WHERE feedid = '${subs[i].feedid}'`).then(r => Number(r.rows[0].count) === 0)) {
+    const count = await clientPG.query(`UPDATE feed SET count = count-1 WHERE feedid = '${subs[i].feedid}' RETURNING feed.count`).then(r => r.rows[0].count);
+    if (!count)
       await clientPG.query(`DELETE FROM feed WHERE feedid = '${subs[i].feedid}'`);
-      continue;
-    }
 
     // check if user has any other subscriptions to the same feed...
     let more = await clientPG.query(`SELECT feedid FROM account INNER JOIN folder ON account.userid = folder.userid \

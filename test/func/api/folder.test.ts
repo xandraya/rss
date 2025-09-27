@@ -29,7 +29,7 @@ describe('POST', () => {
   }
 
   beforeAll(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', '${process.env._TEST_USERID}', 'folder01')`);
   });
 
   afterAll(async () => {
@@ -89,7 +89,7 @@ describe('POST', () => {
   });
 
   test('Successfully adds the folder and dumps the cache', async () => {
-    await CLIENT_RD.sAdd('adf8c2ee050b2173:folderlist', 'foo');
+    await CLIENT_RD.sAdd(`${process.env._TEST_USERID}:folderlist`, 'foo');
 
     const request = new Promise<void>((resolve, reject) => {
       const req = https.request(options, (res) => {
@@ -111,7 +111,7 @@ describe('POST', () => {
     });
 
     return request.then(async () => {
-      expect(CLIENT_RD.hLen('adf8c2ee050b2173:folderlist')).resolves.toBe(0);
+      expect(CLIENT_RD.hLen(`${process.env._TEST_USERID}:folderlist`)).resolves.toBe(0);
     });
   });
 });
@@ -129,8 +129,8 @@ describe('DELETE', () => {
   }
 
   beforeEach(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', 'adf8c2ee050b2173', 'folder01')`);
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder02')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', '${process.env._TEST_USERID}', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', '${process.env._TEST_USERID}', 'folder02')`);
   });
 
   afterEach(async () => {
@@ -258,9 +258,9 @@ describe('DELETE', () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('0', '0', 'post01', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('1', '1', 'post02', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('2', '1', 'post03', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '1', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '2', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '0', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '1', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '2', true)`);
 
     const request = new Promise<void>((resolve, reject) => {
       options.path = '/api/folder?name=folder02';
@@ -289,7 +289,7 @@ describe('DELETE', () => {
   });
 
   test('Dumps the cache', async () => {
-    await CLIENT_RD.hSet('adf8c2ee050b2173:0', 'foo', 'bar');
+    await CLIENT_RD.hSet(`${process.env._TEST_USERID}:0`, 'foo', 'bar');
 
     const request = new Promise<void>((resolve, reject) => {
       options.path = '/api/folder?name=folder01';
@@ -310,7 +310,7 @@ describe('DELETE', () => {
     });
 
     return request.then(async () => {
-      expect(CLIENT_RD.hLen('adf8c2ee050b2173:0')).resolves.toBe(0);
+      expect(CLIENT_RD.hLen(`${process.env._TEST_USERID}:0`)).resolves.toBe(0);
     });
   });
 });

@@ -29,8 +29,8 @@ describe('POST', () => {
   }
 
   beforeEach(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'folder02')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', '${process.env._TEST_USERID}', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', '${process.env._TEST_USERID}', 'folder02')`);
   });
 
   afterEach(async () => {
@@ -210,7 +210,7 @@ describe('DELETE', () => {
   }
 
   beforeEach(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', '${process.env._TEST_USERID}', 'folder01')`);
     await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('0', 'https://app:8082/null.xml', 1)`);
     await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('0', '0', '0', 'sub01', 'Mon, 01 Jan 1970 00:00:01 GMT')`);
   });
@@ -328,9 +328,9 @@ describe('DELETE', () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('0', '0', 'post01', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('1', '1', 'post02', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('2', '1', 'post03', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '1', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '2', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '0', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '1', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '2', true)`);
 
     const request = new Promise<void>((resolve, reject) => {
       options.path = '/api/sub?folder=folder01&name=sub02';
@@ -363,8 +363,8 @@ describe('DELETE', () => {
     await CLIENT_PG.query(`UPDATE feed SET count = 2 WHERE feedid = '0'`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('0', '0', 'post01', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('1', '0', 'post02', 'Mon, 01 May 1970 00:00:01 GMT', 'http://localhost/null')`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '1', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '0', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '1', true)`);
 
     const request = new Promise<void>((resolve, reject) => {
       options.path = '/api/sub?folder=folder01&name=sub02';
@@ -395,7 +395,7 @@ describe('DELETE', () => {
 
   test('Skips dumping cache (among other logic) if subscription never got refreshed', async () => {
     await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('1', '0', '0', 'sub02', 'Mon, 01 Jan 1970 00:00:00 GMT')`);
-    await CLIENT_RD.hSet('adf8c2ee050b2173:0', 'foo', 'bar');
+    await CLIENT_RD.hSet(`${process.env._TEST_USERID}:0`, 'foo', 'bar');
 
     const request = new Promise<void>((resolve, reject) => {
       options.path = '/api/sub?folder=folder01&name=sub02';
@@ -416,12 +416,12 @@ describe('DELETE', () => {
     });
 
     return request.then(async () => {
-      expect(CLIENT_RD.hLen('adf8c2ee050b2173:0')).resolves.toBe(1);
+      expect(CLIENT_RD.hLen(`${process.env._TEST_USERID}:0`)).resolves.toBe(1);
     });
   });
 
   test('Dumps the cache for refreshed subscriptions', async () => {
-    await CLIENT_RD.hSet('adf8c2ee050b2173:0', 'foo', 'bar');
+    await CLIENT_RD.hSet(`${process.env._TEST_USERID}:0`, 'foo', 'bar');
 
     const request = new Promise<void>((resolve, reject) => {
       options.path = '/api/sub?folder=folder01&name=sub01';
@@ -442,7 +442,7 @@ describe('DELETE', () => {
     });
 
     return request.then(async () => {
-      expect(CLIENT_RD.hLen('adf8c2ee050b2173:0')).resolves.toBe(0);
+      expect(CLIENT_RD.hLen(`${process.env._TEST_USERID}:0`)).resolves.toBe(0);
     });
   });
 });

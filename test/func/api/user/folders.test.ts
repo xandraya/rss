@@ -29,13 +29,12 @@ describe('GET', () => {
   }
 
   beforeAll(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'folder02')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', '${process.env._TEST_USERID}', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', '${process.env._TEST_USERID}', 'folder02')`);
   });
 
   afterEach(async () => {
-    for await (const key of CLIENT_RD.scanIterator({ TYPE: "set" }))
-      await CLIENT_RD.del(key);
+    await CLIENT_RD.del(`${process.env._TEST_USERID}:folderlist`);
   });
 
   afterAll(async () => {
@@ -86,7 +85,7 @@ describe('GET', () => {
     })
 
     return request.then(async () => {
-      await CLIENT_RD.sMembers('adf8c2ee050b2173:folderlist').then((r: string[]) => { 
+      await CLIENT_RD.sMembers(`${process.env._TEST_USERID}:folderlist`).then((r: string[]) => { 
         expect(r.length).toBe(2);
         expect(r[0]).toBe('folder01');
         expect(r[1]).toBe('folder02');

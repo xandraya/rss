@@ -30,7 +30,7 @@ describe('GET', () => {
   }
 
   beforeAll(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', '${process.env._TEST_USERID}', 'folder01')`);
     await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('1', 'https://app:8082/null.xml', 1)`);
     await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('2', 'https://app:8082/null.xml', 1)`);
     await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('1', '1', '1', 'sub01', 'Mon, 01 Jan 1972 00:00:00 GMT')`);
@@ -174,8 +174,8 @@ describe('GET', () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'added', 'Mon, 01 Jun 1971 00:00:04 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '1', 'ignored', 'Mon, 01 Jun 1971 00:00:03 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('3', '2', 'added', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, read) VALUES ('adf8c2ee050b2173', '1', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, read) VALUES ('adf8c2ee050b2173', '3', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, read) VALUES ('${process.env._TEST_USERID}', '1', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, read) VALUES ('${process.env._TEST_USERID}', '3', true)`);
 
     const request = new Promise((resolve, reject) => {
       options.path = '/api/post?folder=folder01&read=true';
@@ -211,8 +211,8 @@ describe('GET', () => {
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('1', '1', 'added', 'Mon, 01 Jun 1971 00:00:04 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('2', '1', 'ignored', 'Mon, 01 Jun 1971 00:00:03 GMT', 'null')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) VALUES ('3', '2', 'added', 'Mon, 01 Jun 1971 00:00:00 GMT', 'null')`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '1', true)`);
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '3', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '1', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '3', true)`);
 
     const request = new Promise((resolve, reject) => {
       options.path = '/api/post?folder=folder01&star=true';
@@ -403,7 +403,7 @@ describe('GET', () => {
     });
     
     return request.then(async () => {
-      expect(CLIENT_RD.hKeys('adf8c2ee050b2173:1')).resolves.toEqual(['000100:1']);
+      expect(CLIENT_RD.hKeys(`${process.env._TEST_USERID}:1`)).resolves.toEqual(['000100:1']);
     });
   });
   
@@ -452,7 +452,7 @@ describe('POST', () => {
   }
 
   beforeAll(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', 'adf8c2ee050b2173', 'folder01')`);
+    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('0', '${process.env._TEST_USERID}', 'folder01')`);
     await CLIENT_PG.query(`INSERT INTO feed (feedid, url, count) VALUES ('0', 'https://app:8082/null.xml', 1)`);
     await CLIENT_PG.query(`INSERT INTO subscription (subid, folderid, feedid, name, refresh_date) VALUES ('0', '0', '0', 'sub01', 'Mon, 01 Jan 1972 00:00:00 GMT')`);
     await CLIENT_PG.query(`INSERT INTO post (postid, feedid, title, date, url) values ('0', '0', 'post01', 'Mon, 01 May 1970 00:00:00 GMT', 'http://localhost/post01')`);
@@ -577,7 +577,7 @@ describe('POST', () => {
   });
 
   test('Updates an existing entry in the status table', async () => {
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '0', true)`);
 
     const request = new Promise<void>((resolve, reject) => {
       const req = https.request(options, (res) => {
@@ -607,7 +607,7 @@ describe('POST', () => {
   });
 
   test('Keeps the old values if no request params are supplied', async () => {
-    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('adf8c2ee050b2173', '0', true)`);
+    await CLIENT_PG.query(`INSERT INTO status (userid, postid, star) VALUES ('${process.env._TEST_USERID}', '0', true)`);
 
     const request = new Promise<void>((resolve, reject) => {
       const req = https.request(options, (res) => {
@@ -637,7 +637,7 @@ describe('POST', () => {
   });
 
   test('Dumps the cache', async () => {
-    await CLIENT_RD.hSet('adf8c2ee050b2173:0', 'foo', 'bar');
+    await CLIENT_RD.hSet(`${process.env._TEST_USERID}:0`, 'foo', 'bar');
 
     const request = new Promise<void>((resolve, reject) => {
       const req = https.request(options, (res) => {
@@ -659,7 +659,7 @@ describe('POST', () => {
     });
 
     return request.then(async () => {
-      expect(CLIENT_RD.hLen('adf8c2ee050b2173:0')).resolves.toBe(0);
+      expect(CLIENT_RD.hLen(`${process.env._TEST_USERID}:0`)).resolves.toBe(0);
     });
   });
 });

@@ -227,11 +227,8 @@
 
 TODO:
 - google oauth
-- js api:
-  - AbortSignal
-- test pg and redis concurrency
+- AbortSignal api
 - change nodejs default cyphers
 - wrap feedparser into an async iterator
 - feedparser stream writting buffer
 - refresh api fetchPosts functions limits
-- user removal
