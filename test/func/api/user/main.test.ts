@@ -25,24 +25,10 @@ describe('GET', () => {
     },
     method: 'GET',
     protocol: 'https:',
-    path: '/api/user/folders',
+    path: '/api/user',
   }
 
-  beforeAll(async () => {
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('1', 'adf8c2ee050b2173', 'folder01')`);
-    await CLIENT_PG.query(`INSERT INTO folder (folderid, userid, name) VALUES ('2', 'adf8c2ee050b2173', 'folder02')`);
-  });
-
-  afterEach(async () => {
-    for await (const key of CLIENT_RD.scanIterator({ TYPE: "set" }))
-      await CLIENT_RD.del(key);
-  });
-
-  afterAll(async () => {
-    await CLIENT_PG.query('TRUNCATE TABLE folder CASCADE');
-  });
-
-  test('Returns names of all folders that belong to the logged in user', async () => {
+  test('Returns user metadata', async () => {
     const request = new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         expect(res.statusCode).toBe(200);
@@ -62,7 +48,7 @@ describe('GET', () => {
       req.end();
     })
 
-    return expect(request).resolves.toEqual(['folder01', 'folder02']);
+    return expect(request).resolves.toEqual({ userid: 'adf8c2ee050b2173', username: 'foobar', email: 'foobar@example.com' });
   });
 
   test('Caches the query', async () => {
@@ -86,10 +72,11 @@ describe('GET', () => {
     })
 
     return request.then(async () => {
-      await CLIENT_RD.sMembers('adf8c2ee050b2173:folderlist').then((r: string[]) => { 
-        expect(r.length).toBe(2);
-        expect(r[0]).toBe('folder01');
-        expect(r[1]).toBe('folder02');
+      await CLIENT_RD.get('adf8c2ee050b2173').then((r: any) => { 
+        const info = JSON.parse(r);
+        expect(info.userid).toBe('adf8c2ee050b2173');
+        expect(info.username).toBe('foobar');
+        expect(info.email).toBe('foobar@example.com');
       });
     });
   });

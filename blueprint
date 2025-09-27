@@ -3,7 +3,7 @@
 - endpoints:
   # session managed by cookie _session string
   # api's that require auth are only concerned with parsing the session
-  # post limit per page/sub and oldest post date per sub hardcoded for every user
+  # post limit per page/sub and oldest post date per sub hardcoded for every user for simplicity
 
 	- /auth/local
     - GET /login
@@ -19,8 +19,6 @@
         - 403 if:
           - user doesn't exist
           - or invalid password
-    - GET /register
-      # returns a form
     - POST /register
       # adds a new user to the database
       - returns:
@@ -35,9 +33,22 @@
         - email: string
 
   - /api/user
-    - GET /info
+    - GET (auth) /
       # fetches user account metadata
-    - GET /folders
+      - returns:
+        - 200 if:
+          - user data successfully fetched
+      - cache: key '{userid}'
+    - DELETE / (auth)
+      # removes the user
+      # removes entries from the status table
+      - returns:
+        - 204 if:
+          - user and all of their folders removed
+          - and corresponding status entries are removed
+          - and cache is dumped
+      - cache: key '{userid}:{folderid}'
+    - GET (auth) /folders
       # fetches all folder names
       - returns:
         - 200 if:
@@ -133,7 +144,7 @@
 
   - /api/post
     - GET / (auth)
-      # fetches posts that belong to the suplied folder's subscriptions
+      # fetches posts that belong to the supplied folder's subscriptions
       - returns:
         - 200 if:
           - fetches posts that: 
@@ -208,6 +219,7 @@
     - read: boolean
 
 - CACHE schema:
+  - {userid}
   - {userid}:folderlist
   - {userid}:{folderid}
     - {flags}:{pagenum}

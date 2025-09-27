@@ -18,7 +18,7 @@ if (!process.env._AGE_POST_LIMIT!.match(interval))
 
 if (cluster.isPrimary) {
   cluster.setupPrimary({
-    exec: './src/index.ts',
+    exec: './src/main.ts',
   })
 
   fs.mkdir('./logs', { recursive: true }, (err) => {

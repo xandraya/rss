@@ -5,28 +5,28 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
 
 async function handleGET(res: ServerResponse, clientPG: Client, clientRD: any, userid: string): Promise<void> {
-  let key = `${userid}:folderlist`;
+  let key = `${userid}`;
 
   // first attempt fetching from cache
   if (Number(process.env._CACHING)) {
-    const cachedData: string[] = await clientRD.sMembers(key);
-    if (cachedData.length) {
-      console.log('/user/folders CACHE HIT');
+    const cachedData: string | null = await clientRD.get(key);
+    if (cachedData) {
+      console.log('/user CACHE HIT');
 
       res.statusCode = 200;
       res.end(JSON.stringify(cachedData));
       return;
     }
   }
-  console.log('/user/folders CACHE MISS');
+  console.log('/user CACHE MISS');
 
-  const folders: string[] = await clientPG.query(`SELECT name FROM folder WHERE userid = '${userid}'`).then(r => r.rows.map(e => e.name));
+  const info: string[] = await clientPG.query(`SELECT userid, username, email FROM account WHERE userid = '${userid}'`).then(r => r.rows[0]);
 
   if (Number(process.env._CACHING))
-    await clientRD.sAdd(key, folders);
+    await clientRD.set(key, JSON.stringify(info));
 
   res.statusCode = 200;
-  res.end(JSON.stringify(folders));
+  res.end(JSON.stringify(info));
 }
 
 export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client, clientRD: any): Promise<void> {

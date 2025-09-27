@@ -136,6 +136,7 @@ export default async function initServer(wrkID: number) {
           case '/auth/local/register': await (require('./auth/local/register')).handle(req, res, CLIENT_PG); break;
 
           // api
+          case '/api/user': await (require('./api/user/main')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
           case '/api/user/folders': await (require('./api/user/folders')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
           case '/api/update': await (require('./api/update')).handle(req, res, CLIENT, CLIENT_PG, CLIENT_RD); break;
           case '/api/scrape': await (require('./api/scrape')).handle(req, res, CLIENT, CLIENT_PG); break;

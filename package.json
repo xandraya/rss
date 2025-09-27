@@ -1,11 +1,11 @@
 {
   "name": "rss",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "src/main.ts",
   "private": true,
   "scripts": {
     "test": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx jest --roots ./test --runInBand --detectOpenHandles",
-    "start": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx tsx src/index.ts"
+    "start": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx tsx src/main.ts"
   },
   "author": "me:)",
   "license": "ISC",
