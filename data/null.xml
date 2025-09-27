@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+   <channel>
+      <title>Sample RSS</title>
+      <link>http://app:8082/api/blob/null.xml</link>
+      <description>Sample</description>
+      <language>en-us</language>
+      <pubDate>Mon, 01 Jan 2000 00:00:00 GMT</pubDate>
+      <lastBuildDate>Mon, 01 Jan 2000 00:00:00 GMT</lastBuildDate>
+      <generator>Weblog Editor 2.0</generator>
+      <managingEditor>editor@example.com</managingEditor>
+      <webMaster>webmaster@example.com</webMaster>
+   </channel>
+</rss>

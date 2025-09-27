@@ -42,9 +42,9 @@
       - returns:
         - 200 if:
           - folder names successfully fetched
-      - cache: key 'user:folderlist'
+      - cache: key '{userid}:folderlist'
 
-	- /api/refresh
+	- /api/update
     - POST / (auth)
       # refreshes all subscriptions for a given folder
       # fetches and adds posts to the database
@@ -59,7 +59,7 @@
           - or folder does not exist
       - application/json params:
         - folder: string
-      - cache: 'user:folder'
+      - cache: key '{userid}:{folderid}'
 
   - /api/scrape
     # uses scraper module to find all advertised feeds on a site
@@ -151,7 +151,7 @@
         - sort?: alpha_asc | alpha_desc | date_asc | date_desc
         - read?: boolean
         - star?: boolean
-      - cache: key 'userid:folderid' fields 'flags:pagenum'
+      - cache: key '{userid}:{folderid}' fields '{flags}:{pagenum}'
     - POST / (auth)
       # updates post metadata
       # post url can be used as unique indentifier
@@ -214,7 +214,6 @@
 
 
 TODO:
-- refresh endpoint doesn't properly ignore starred posts
 - google oauth
 - js api:
   - AbortSignal

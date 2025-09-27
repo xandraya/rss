@@ -54,17 +54,18 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
     let data: string = '';
     for await (const chunk of req) data += chunk;
     try {
-      var serialized = JSON.parse(data);
-      if (!serialized.folder) throw new Error();
+      var opts = JSON.parse(data);
+      if (!opts.folder) throw new Error();
     } catch(e: any) {
       return handle400(res, 'Request params could not be parsed');
     }
   }
 
   // throw error if folder does not exist
-  const folderid: string | undefined = await clientPG.query(`SELECT folderid FROM folder WHERE userid = '${userid}' AND name = '${serialized.folder}'`)
+  const folderid: string | undefined = await clientPG.query(`SELECT folderid FROM folder WHERE userid = '${userid}' AND name = '${opts.folder}'`)
     .then(r => r.rows[0] ? r.rows[0].folderid : undefined);
-  if (!folderid) return handle400(res, 'Folder does not exist');
+  if (!folderid)
+    return handle400(res, 'Folder does not exist');
 
   const feeds: { feedid: string, url: string}[] = await clientPG.query(`SELECT feed.feedid, feed.url FROM folder INNER JOIN subscription sub ON folder.folderid = sub.folderid \
 \ \ \ INNER JOIN feed ON sub.feedid = feed.feedid WHERE folder.folderid = '${folderid}'`).then(r => r.rows);
@@ -97,29 +98,24 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
     * if theres more than SUB_POST_LIMIT of them above the oldest sub refresh_date
     * dont remove starred posts
   */
-  {
-    // create a view of all posts that belong to refreshed feeds and that are older than the oldest subscriptions refresh date
+  if (feeds.length) {
+    // create a view of all posts that are older than the oldest subscriptions refresh_date
     // don't include starred posts
     await clientPG.query(`\
-\ \ \ CREATE TEMP VIEW cleanup AS (\
+\ \ \ CREATE OR REPLACE TEMP VIEW cleanup AS (\
 \ \ \ \ WITH oldest AS \
 \ \ \ \ \ (SELECT feed.feedid, MIN(sub.refresh_date) refresh_date FROM feed INNER JOIN subscription sub ON feed.feedid = sub.feedid GROUP BY feed.feedid) \
 \ \ \ \ SELECT oldest.feedid, oldest.refresh_date, post.postid, post.date FROM oldest INNER JOIN post ON oldest.feedid = post.feedid \
-\ \ \ \ LEFT OUTER JOIN status ON post.postid = status.postid WHERE post.date < oldest.refresh_date AND status.star IS NULL AND oldest.feedid IN \
-\ \ \ \ \ (SELECT feed.feedid FROM folder INNER JOIN subscription sub ON folder.folderid = sub.folderid INNER JOIN feed ON sub.feedid = feed.feedid WHERE folder.folderid = '${folderid}') \
-\ \ \ \ \ ORDER BY post.date ASC)`)
+\ \ \ \ WHERE post.date <= oldest.refresh_date AND post.postid NOT IN (SELECT postid FROM status))`) 
 
     for (let i=0; i<feeds.length; i++) {
-      // SUB_POST_LIMIT
-      const count: number = await clientPG.query(`SELECT count(*) FROM cleanup WHERE feedid = '${feeds[i].feedid}'`).then(r => r.rows[0].count);
-      if (count-SUB_POST_LIMIT > 0)
-        await clientPG.query(`DELETE FROM post WHERE postid IN (SELECT postid FROM cleanup ORDER BY date ASC LIMIT ${count-SUB_POST_LIMIT})`);
-
       // AGE_POST_LIMIT
-      await clientPG.query(`WITH batch AS ( \
-\ \ \ \ SELECT postid FROM cleanup WHERE date < refresh_date + '-${AGE_POST_LIMIT}'
-\ \ \ \ \ AND feedid = '${feeds[i].feedid}') \
-\ \ \ \ DELETE FROM post USING batch WHERE post.postid = batch.postid`)
+      await clientPG.query(`DELETE FROM post WHERE post.date < (SELECT refresh_date FROM cleanup WHERE postid = post.postid) + '-${AGE_POST_LIMIT}' AND feedid = '${feeds[i].feedid}'`);
+
+      // SUB_POST_LIMIT
+      await clientPG.query(`WITH batch AS \
+\ \ \ \ (SELECT postid FROM (SELECT ROW_NUMBER() OVER (ORDER BY date DESC) as row_num, postid FROM cleanup WHERE feedid = '${feeds[i].feedid}') WHERE row_num > ${SUB_POST_LIMIT}) \
+\ \ \ \ DELETE FROM post USING batch WHERE batch.postid = post.postid`);
     }
   }
   

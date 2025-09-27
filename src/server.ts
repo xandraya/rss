@@ -116,18 +116,18 @@ export default async function initServer(wrkID: number) {
       const paramIndex = req.url!.indexOf('?');
       if (wrkID === wCount+2) {
         // TESTING ENDPOINTS
-        switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
-          case '/api/blob/unit_refresh.xml': await (require('./api/blob')).handle(req, res, 'unit_refresh.xml'); break;
-          case '/api/blob/func_scrape.html': await (require('./api/blob')).handle(req, res, 'func_scrape.html'); break;
-          case '/api/blob/func_refresh.xml': await (require('./api/blob')).handle(req, res, 'func_refresh.xml'); break;
+        const url = paramIndex === -1 ? req.url! : req.url!.slice(0, paramIndex); 
 
-          // ROOT
-          case '/':
+        if (url.startsWith('/api/blob'))
+          await (require('./api/blob')).handle(req, res, url.slice(url.search(/\/[^\/]+$/)+1));
+
+        else if (url === '/') {
             res.statusCode = 200;
             res.end('root');
-            break;
-          default: handle404(res);
+            return;
         }
+
+        else handle404(res);
       } else {
         // DEFAULT ENDPOINTS
         switch (paramIndex === -1 ? req.url : req.url!.slice(0, paramIndex)) {
@@ -137,7 +137,7 @@ export default async function initServer(wrkID: number) {
 
           // api
           case '/api/user/folders': await (require('./api/user/folders')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
-          case '/api/refresh': await (require('./api/refresh')).handle(req, res, CLIENT, CLIENT_PG, CLIENT_RD); break;
+          case '/api/update': await (require('./api/update')).handle(req, res, CLIENT, CLIENT_PG, CLIENT_RD); break;
           case '/api/scrape': await (require('./api/scrape')).handle(req, res, CLIENT, CLIENT_PG); break;
           case '/api/sub': await (require('./api/sub')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
           case '/api/folder': await (require('./api/folder')).handle(req, res, CLIENT_PG, CLIENT_RD); break;

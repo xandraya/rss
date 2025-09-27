@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<rss version="2.0">
+   <channel>
+      <title>Sample RSS</title>
+      <link>http://app:8082/api/blob/func_refresh01.xml</link>
+      <description>Sample</description>
+      <language>en-us</language>
+      <pubDate>Mon, 01 Jan 2000 00:00:00 GMT</pubDate>
+      <lastBuildDate>Mon, 01 Jan 2000 00:00:00 GMT</lastBuildDate>
+      <generator>Weblog Editor 2.0</generator>
+      <managingEditor>editor@example.com</managingEditor>
+      <webMaster>webmaster@example.com</webMaster>
+      <item>
+         <title>01</title>
+         <link>http://localhost/01.html</link>
+         <description>content</description>
+         <pubDate>Mon, 01 Jun 1971 00:00:01 GMT</pubDate>
+      </item>
+      <item>
+         <title>02</title>
+         <link>http://localhost/02.html</link>
+         <description>content</description>
+         <pubDate>Mon, 01 Jun 1971 00:00:00 GMT</pubDate>
+      </item>
+   </channel>
+</rss>
