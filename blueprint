@@ -232,3 +232,5 @@ TODO:
 - wrap feedparser into an async iterator
 - feedparser stream writting buffer
 - refresh api fetchPosts functions limits
+- global rate limiter/load balancer
+- auth rate limiter

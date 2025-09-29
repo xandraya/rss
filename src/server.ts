@@ -7,7 +7,7 @@ import { handle404, handle500 } from './services/error';
 
 import type { SystemError } from './types.d';
 import type { Client } from 'pg';
-import type HTTPClient from '76a01a3490137f87';
+import type HTTPClient from 'http_client';
 
 let CLIENT: HTTPClient;
 let CLIENT_PG: Client;

@@ -1,6 +1,6 @@
 import * as pg from 'pg';
 import * as redis from 'redis';
-import HTTPClient from '76a01a3490137f87';
+import HTTPClient from 'http_client';
 
 // shared pg config
 const config: pg.ClientConfig = Object.freeze({

@@ -20,9 +20,9 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "76a01a3490137f87": "github:xandraya/76a01a3490137f87",
     "dotenv": "^16.5.0",
     "feedparser": "^2.2.10",
+    "http_client": "github:xandraya/http_client",
     "pg": "^8.11.5",
     "redis": "^4.6.13",
     "tsx": "^4.7.3"

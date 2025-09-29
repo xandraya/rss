@@ -41,7 +41,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
     return handle400(res, 'Malformed cookie string');
   }
 
-  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Path=/; Max-Age=3600; SameSite=Strict`)
+  res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Path=/; Max-Age=3600; SameSite=Strict, Secure; HttpOnly`)
   handle302(res, cookies._referer || '/', '');
   return;
 }
