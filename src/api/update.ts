@@ -7,7 +7,7 @@ import verifySession from '../services/session';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
-import type HTTPClient from '76a01a3490137f87';
+import type HTTPClient from 'http_client';
 import type { FeedItem } from '../types';
 
 // setup custom limits for the testing endpoint
@@ -76,12 +76,27 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
       const url = new URL(feeds[i].url);
       let postid: string;
       for (let post of await fetchPosts(url, client)) {
-        // skip adding if post already exists
+        post.image.title = post.image.title || '';
+
+        // generate id
         postid = hash('sha256', `${feeds[i].feedid}${post.origlink || post.link}`, 'hex').slice(0,16);
+
+        // validate length
+        post.title = post.title.length > 64 ? post.title.slice(0,61)+'...' : post.title;
+        post.author = post.author.length > 64 ? post.author.slice(0,61)+'...' : post.author;
+        post.image.title = post.image.title.length > 64 ? post.image.title.slice(0,61)+'...' : post.image.title;
+
+        // validate data
+        post.title = post.title.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+        post.description = post.description.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+        post.author = post.author.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+        post.image.title = post.image.title.replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+
+        // skip adding if post already exists
         if (await clientPG.query(`SELECT title FROM post WHERE postid = '${postid}'`).then(r => r.rows.length === 0))
           await clientPG.query(`INSERT INTO post (postid, feedid, title, date, content, url, author, image_title, image_url) VALUES \
-\ \ \ \ \ ('${postid}', '${feeds[i].feedid}', '${post.title}', '${post.pubDate.toUTCString()}', '${post.description}', '${post.origlink || post.link}', \
-\ \ \ \ \ '${post.author}', '${post.image.title}', '${post.image.url}')`);
+\ \ \ \ \ ('${postid}', '${feeds[i].feedid}', E'${post.title}', '${post.pubDate.toUTCString()}', E'${post.description}', '${post.origlink || post.link}', \
+\ \ \ \ \ E'${post.author}', E'${post.image.title}', '${post.image.url}')`);
       }
     }
   }

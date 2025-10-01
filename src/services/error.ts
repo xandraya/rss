@@ -18,17 +18,17 @@ function template(code: string, reason: string) {
     </html>`
 }
 
-export function handle302(res: ServerResponse, url: string, referer: string, data?: string,) {
+export function handle302(res: ServerResponse, url: string, referer?: string, data?: string,) {
   res.statusCode = 302;
   res.setHeader('Location', url)
-    .appendHeader('Set-Cookie', `_referer="${referer}"; Path=/; SameSite=Strict`)
+    .appendHeader('Set-Cookie', `${referer ? '_referer="' + referer + '"; ' : ''}Path=/; SameSite=Strict`)
     .end(data);
 }
 
-export function handle307(res: ServerResponse, url: string, referer: string, data?: string) {
+export function handle307(res: ServerResponse, url: string, referer?: string, data?: string) {
   res.statusCode = 307;
   res.setHeader('Location', url)
-    .appendHeader('Set-Cookie', `_referer="${referer}"; Path=/; SameSite=Strict`)
+    .appendHeader('Set-Cookie', `${referer ? '_referer="' + referer + '"; ' : ''}Path=/; SameSite=Strict`)
     .end(data);
 }
 
@@ -45,7 +45,7 @@ export function handle401(res: ServerResponse, auth: string) {
 
 export function handle403(res: ServerResponse, reason: string) {
   res.statusCode = 403;
-  res.end(template('403 forbidden', reason));
+  res.end(template('403 Forbidden', reason));
 }
 
 export function handle404(res: ServerResponse) {
@@ -59,13 +59,18 @@ export function handle405(res: ServerResponse) {
     .end();
 }
 
-export function handle500(res: ServerResponse, err: Error) {
+export function handle500(res: ServerResponse, reason: string) {
   res.statusCode = 500;
-  console.error(err);
-  res.end();
+  console.error(reason);
+  res.end(template('500 Internal Server Error', reason));
 }
 
 export function handle501(res: ServerResponse) {
   res.statusCode = 501;
   res.end();
+}
+
+export function handle503(res: ServerResponse, reason: string) {
+  res.statusCode = 503;
+  res.end(template('503 Temporary Unavailable', reason));
 }

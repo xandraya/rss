@@ -10,9 +10,12 @@ import type { Client } from 'pg';
 // https://stackoverflow.com/questions/201323/how-can-i-validate-an-email-address-using-a-regular-expression#answer-201378
 const emailRegex = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
 
-async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Client) {
+async function handlePOST(req: IncomingMessage, res: ServerResponse, clientPG: Client) {
   const scrypt = promisify(crypto.scrypt);
-  if (req.headersDistinct.encoding && req.headersDistinct.encoding[0] !== 'application/x-www-form-urlencoded') { handle400(res, 'Invalid content type'); return; }
+  if (req.headersDistinct.encoding && req.headersDistinct.encoding[0] !== 'application/x-www-form-urlencoded') { 
+    handle400(res, 'Invalid content type'); 
+    return; 
+  }
 
   req.setEncoding('utf8')
   let data: string = '';
@@ -27,26 +30,26 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: Cli
   if (!username.match(/^[a-zA-Z0-9_]{4,32}$/)) return handle400(res, "Username invalid");
   if (!password.match(/^.{8,32}$/)) return handle400(res, "Password invalid");
   if (!email.match(emailRegex)) return handle400(res, "E-mail invalid");
-  if (await client.query(`select from account where email = '${email}'`).then(r => r.rows.length !== 0))
+  if (await clientPG.query(`SELECT email FROM account WHERE email = '${email}'`).then(r => r.rows.length !== 0))
     return handle400(res, "Account with this e-mail already exists");
 
-  let userid = await random(8);
-  while (await client.query(`select from account where userid = '${userid}'`).then(r => r.rows.length !== 0))
+  let userid = await random(16);
+  while (await clientPG.query(`SELECT userid FROM account WHERE userid = '${userid}'`).then(r => r.rows.length !== 0))
     userid = (parseInt(userid, 16)+1).toString(16);
 
   const salt = await random(16);
   const hash = await scrypt(password.normalize('NFC'), salt, 32).then(r => (r as Buffer).toString('hex'));
-  await client.query(`insert into account (userid, username, email, password, salt) values ('${userid}', '${username}', '${email}', '${hash}', '${salt}')`);
+  await clientPG.query(`INSERT INTO account (userid, username, email, password, salt) VALUES ('${userid}', '${username}', '${email}', '${hash}', '${salt}')`);
 
   res.statusCode = 201;
   res.end('Successfully registered!');
 }
 
-export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client): Promise<void> {
+export async function handle(req: IncomingMessage, res: ServerResponse, clientPG: Client): Promise<void> {
   res.strictContentLength = true;
 
   switch (req.method) {
-    case 'POST': await handlePOST(req, res, clientPg); break;
+    case 'POST': await handlePOST(req, res, clientPG); break;
     default: handle405(res);
   }
 }

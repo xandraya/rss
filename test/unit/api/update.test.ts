@@ -1,7 +1,7 @@
 import { fetchPosts } from '../../../src/api/update';
 import { initHTTPClient } from '../../services/db';
 
-import type HTTPClient from '76a01a3490137f87';
+import type HTTPClient from 'http_client';
 
 let CLIENT: HTTPClient
 

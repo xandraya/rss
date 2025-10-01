@@ -73,10 +73,10 @@ export async function initRD(db: number) {
 }
 
 export async function createTables(client: pg.Client): Promise<undefined> {
-  await client.query(`CREATE TABLE IF NOT EXISTS account (userid varchar(16) CONSTRAINT pk_userid PRIMARY KEY, username varchar(32) NOT NULL, \
-\ \ email varchar(64) NOT NULL, password varchar(64) NOT NULL, salt varchar(32) NOT NULL)`);
+  await client.query(`CREATE TABLE IF NOT EXISTS account (userid varchar(32) CONSTRAINT pk_userid PRIMARY KEY, username varchar(32) NOT NULL, \
+\ \ email varchar(64) NOT NULL, password varchar(64), salt varchar(32))`);
   await client.query(`CREATE TABLE IF NOT EXISTS folder (folderid varchar(16) CONSTRAINT pk_folderid PRIMARY KEY, \
-\ \ userid varchar(16) REFERENCES account(userid) ON DELETE CASCADE NOT NULL, name varchar(32) NOT NULL)`);
+\ \ userid varchar(32) REFERENCES account(userid) ON DELETE CASCADE NOT NULL, name varchar(32) NOT NULL)`);
   await client.query(`CREATE TABLE IF NOT EXISTS feed (feedid varchar(16) CONSTRAINT pk_feedid PRIMARY KEY, \
 \ \ url bpchar NOT NULL, count smallint NOT NULL)`);
   await client.query(`CREATE TABLE IF NOT EXISTS subscription (subid varchar(16) CONSTRAINT pk_subid PRIMARY KEY, \
@@ -85,7 +85,7 @@ export async function createTables(client: pg.Client): Promise<undefined> {
   await client.query(`CREATE TABLE IF NOT EXISTS post (postid varchar(16) CONSTRAINT pk_postid PRIMARY KEY, \
 \ \ feedid varchar(16) REFERENCES feed(feedid) ON DELETE CASCADE NOT NULL, title varchar(64) NOT NULL, date timestamp(0) without time zone NOT NULL, url bpchar NOT NULL, \
 \ \ content text, author varchar(64), image_title varchar(64), image_url bpchar)`);
-  await client.query(`CREATE TABLE IF NOT EXISTS status (userid varchar(16) REFERENCES account(userid) ON DELETE CASCADE NOT NULL, \
+  await client.query(`CREATE TABLE IF NOT EXISTS status (userid varchar(32) REFERENCES account(userid) ON DELETE CASCADE NOT NULL, \
 \ \ postid varchar(16) REFERENCES post(postid) ON DELETE CASCADE NOT NULL, star boolean, read boolean, CONSTRAINT pk_status PRIMARY KEY (userid, postid))`);
 }
 

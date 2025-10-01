@@ -32,6 +32,10 @@
         - password: string
         - email: string
 
+  - /auth/oauth/google
+    - GET /login
+    - GET /callback
+
   - /api/user
     - GET (auth) /
       # fetches user account metadata
@@ -183,14 +187,15 @@
 	# conforms to BCNF
   # has b-tree index on FKeys
 	- account:
-    - userid: varchar(16)
+    - userid: varchar(32)
     - username: varchar(32)
     - email: varchar(64)
     - password: varchar(64)
     - salt: varchar(32)
+    - oauth: boolean
 	- folder 
     - folderid: varchar(16)
-    - userid: varchar(16)
+    - userid: varchar(32)
     - name: varchar(32)
 	- feed:
     - feedid: varchar(16)
@@ -213,7 +218,7 @@
     - image_title: varchar(64)
     - image_url: bpchar
   - status:
-    - userid: varchar(16) CASCADE
+    - userid: varchar(32) CASCADE
     - postid: varchar(16) CASCADE
     - star: boolean
     - read: boolean
@@ -226,7 +231,6 @@
 
 
 TODO:
-- google oauth
 - AbortSignal api
 - change nodejs default cyphers
 - wrap feedparser into an async iterator

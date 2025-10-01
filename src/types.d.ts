@@ -47,8 +47,8 @@ export interface FeedItem {
   origlink: string
   author: string
   image: {
-    title: string
-    url: string
+    title?: string
+    url?: string
   }
 }
 

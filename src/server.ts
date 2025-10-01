@@ -22,7 +22,7 @@ export default async function initServer(wrkID: number) {
     CLIENT_RD = await initRD(wrkID === wCount+1 ? 1 : 0);
 
     if (wrkID === 1) {
-      await dropTables(CLIENT_PG);
+      //await dropTables(CLIENT_PG);
       await createTables(CLIENT_PG);
     }
   }
@@ -134,6 +134,8 @@ export default async function initServer(wrkID: number) {
           // auth
           case '/auth/local/login': await (require('./auth/local/login')).handle(req, res, CLIENT_PG); break;
           case '/auth/local/register': await (require('./auth/local/register')).handle(req, res, CLIENT_PG); break;
+          case '/auth/oauth2/google/login': await (require('./auth/oauth2/google/login')).handle(req, res, CLIENT_PG, CLIENT_RD); break;
+          case '/auth/oauth2/google/callback': await (require('./auth/oauth2/google/callback')).handle(req, res, CLIENT, CLIENT_PG, CLIENT_RD); break;
 
           // api
           case '/api/user': await (require('./api/user/main')).handle(req, res, CLIENT_PG, CLIENT_RD); break;

@@ -8,7 +8,7 @@ import type { Message } from './types.d';
 
 // validate environment
 require('dotenv').config();
-['_WORKER_COUNT', '_TESTING', '_AGE_POST_LIMIT', '_SUB_POST_LIMIT', '_PAGE_POST_LIMIT', '_JWT_KEY']
+['_WORKER_COUNT', '_TESTING', '_AGE_POST_LIMIT', '_SUB_POST_LIMIT', '_PAGE_POST_LIMIT', '_JWT_KEY', '_OAUTH_CLIENT_ID', '_OAUTH_CLIENT_SECRET']
   .forEach(env => { if (process.env[env] === undefined) throw new Error(`${env} not initialized`) });
 if (process.env._WORKER_COUNT! > require('node:os').availableParallelism())
   throw new Error('CPU thread count exceeded');

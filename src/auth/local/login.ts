@@ -41,8 +41,9 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, clientPg: Cl
     return handle400(res, 'Malformed cookie string');
   }
 
+  // redirect to root
   res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Path=/; Max-Age=3600; SameSite=Strict, Secure; HttpOnly`)
-  handle302(res, cookies._referer || '/', '');
+  handle302(res, cookies._referer || '/');
   return;
 }
 
@@ -51,7 +52,7 @@ export async function handle(req: IncomingMessage, res: ServerResponse, clientPg
   try {
     const userid = await verifySession(req, clientPg);
     if (userid)
-      return handle307(res, `/`, req.url || '/');
+      return handle307(res, `/`);
   } catch(e: any) {
     return handle400(res, e.message);
   }
