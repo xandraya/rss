@@ -1,0 +1,39 @@
+name: main
+
+on:
+  push:
+    branches: [ $default-branch ]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20, 22, 24]
+
+    steps:
+    - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+    - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub."
+    - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+
+    - uses: actions/checkout@v5
+      with:
+        clean: true
+        show-progress: true
+
+    - run: echo "Using Node.js ${{ matrix.node-version }}."
+
+    - name: Decrypt .env
+      run: ./decrypt.sh
+      env:
+        ENV_DECRYPTION_KEY: ${{ secrets.ENV_DECRYPTION_KEY }}
+
+    - name: Build the containers
+      run: env NODE_VERSION=${{ matrix.node-version }} docker compose build
+
+    - name: Run all tests
+      run: docker compose up --abort-on-container-exit

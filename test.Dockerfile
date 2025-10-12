@@ -1,4 +1,5 @@
-FROM node:alpine
+ARG version
+FROM node:${version:+$version-}alpine
 USER 1000:1000
 WORKDIR /app
 COPY --chown=1000:1000 package.json package-lock.json .

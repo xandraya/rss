@@ -3,6 +3,8 @@ name: rss
 services:
   app:
     build:
+      args:
+        version: ${NODE_VERSION}
       context: .
       dockerfile: ./app.Dockerfile
     depends_on:
@@ -81,6 +83,8 @@ services:
 
   test:
     build:
+      args:
+        version: ${NODE_VERSION}
       context: .
       dockerfile: ./test.Dockerfile
     depends_on:

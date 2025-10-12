@@ -4,7 +4,7 @@
   "main": "src/main.ts",
   "private": true,
   "scripts": {
-    "test": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx jest --roots ./test --runInBand --detectOpenHandles",
+    "test": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx tsc --noEmit; npx jest --roots ./test --runInBand --detectOpenHandles",
     "start": "export NODE_EXTRA_CA_CERTS=./key/cacert.pem; npx tsx src/main.ts"
   },
   "author": "me:)",
@@ -17,7 +17,8 @@
     "@types/pg": "^8.11.5",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
