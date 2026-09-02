@@ -26,8 +26,7 @@ async function handleGET(res: ServerResponse, clientRD: any) {
     url.searchParams.set(key, val);
 
   // redirect user to the authorization server
-  handle302(res, url.toString());
-  return;
+  return handle302(res, url.toString());
 }
 
 export async function handle(req: IncomingMessage, res: ServerResponse, clientPg: Client, clientRD: any): Promise<void> {

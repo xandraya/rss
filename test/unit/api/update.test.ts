@@ -2,6 +2,7 @@ import { fetchPosts } from '../../../src/api/update';
 import { initHTTPClient } from '../../services/db';
 
 import type HTTPClient from 'http_client';
+import type { FeedItem } from '../../../src/types';
 
 let CLIENT: HTTPClient
 
@@ -16,7 +17,9 @@ afterAll(async () => {
 describe('fetchPosts', () => {
   test('Successfully fetches and parses valid RSS/ATOM syntax', async () => {
     const url = new URL('https://app:8082/api/blob/unit_refresh.xml');
-    let posts = await fetchPosts(url, CLIENT);
+    let posts: FeedItem[] = [];
+    for (let post of await fetchPosts(url, CLIENT))
+      posts.push(post);
 
     expect(posts.length).toBe(4);
     expect(posts[0].title).toBe('Star City');

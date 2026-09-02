@@ -3,7 +3,7 @@ import verifySession from '../services/session';
 
 import type { IncomingMessage, ServerResponse } from 'http';
 import type { Client } from 'pg';
-import type HTTPClient from '76a01a3490137f87';
+import type HTTPClient from 'http_client';
 
 export async function fetchHtml(url: URL, client: HTTPClient): Promise<string> {
   let data = '';

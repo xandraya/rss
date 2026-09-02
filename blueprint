@@ -34,7 +34,19 @@
 
   - /auth/oauth/google
     - GET /login
+      # forwards user agent to the google's oauth authorization endpoint
     - GET /callback
+      - returns:
+        - 302 if:
+          - access token is successfully retrieved and session string generated
+        - 400 if:
+          - google's authorization server returned malformed data
+        - 403 if:
+          - possible CSRF attack is detected due to the state token mismatch
+        - 500 if:
+          - google's authorization server returned an unknown or fatal error
+        - 503 if:
+          - google's authorization server is unavailable
 
   - /api/user
     - GET (auth) /
@@ -101,7 +113,7 @@
       - application/json params:
         - name: string
         - folder: string
-        - feedurl: string
+        - url: string
     - DELETE / (auth)
       # removes a subscription
       - returns:
@@ -153,8 +165,8 @@
         - 200 if:
           - fetches posts that: 
             - are not 1yr older than the oldest subscription refresh date
-            - are within the set post limit per subscription
-            - have the selected flag set
+            - are within the post limit per subscription
+            - have the optional selected flag set
           - and optionally sorts them
           - and caches the query
         - 400 if:
@@ -175,10 +187,10 @@
           - post metadata updated for the current user
         - 400 if:
           - parameters are missing
-          - or post with the supplied url does not exist
-          - or post with the supplied url does not belong to any subscriptions
+          - or post with the supplied id does not exist
+          - or post with the supplied id does not belong to any subscriptions
       - application/json params:
-        - url: string
+        - postid: string
         - read?: boolean
         - star?: boolean
       - cache: key '{userid}:{folderid}'
@@ -233,8 +245,7 @@
 TODO:
 - AbortSignal api
 - change nodejs default cyphers
-- wrap feedparser into an async iterator
-- feedparser stream writting buffer
-- refresh api fetchPosts functions limits
 - global rate limiter/load balancer
 - auth rate limiter
+- CORS
+- CORP

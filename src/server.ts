@@ -149,7 +149,15 @@ export default async function initServer(wrkID: number) {
           // root
           case '/':
             res.statusCode = 200;
-            res.end('root');
+            res.setHeader('Content-Security-Policy', "default-src: 'none'")
+            res.end(`<html>
+                     <head>
+                     </head>
+                     <body>
+                       <img src='https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fthumbor.forbes.com%2Fthumbor%2Ffit-in%2F900x510%2Fhttps%3A%2F%2Fwww.forbes.com%2Fadvisor%2Fwp-content%2Fuploads%2F2023%2F07%2Ftop-20-small-dog-breeds.jpeg.jpg&f=1&nofb=1&ipt=f453ec72a595b210f063fdb79cdf46b685a26f5da5e930616285c0093a8c63ac' />
+                     </body>
+                     </html>
+                    `);
             break;
           default: handle404(res);
         }

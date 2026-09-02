@@ -140,8 +140,7 @@ async function handleGET(req: IncomingMessage, res: ServerResponse, client: HTTP
   
   // redirect to root
   res.appendHeader('Set-Cookie', `_session="${token.toString()}"; Path=/; Max-Age=3600; SameSite=Strict, Secure; HttpOnly`)
-  handle302(res, '/');
-  return;
+  return handle302(res, '/');
 }
 
 export async function handle(req: IncomingMessage, res: ServerResponse, client: HTTPClient, clientPG: Client, clientRD: any): Promise<void> {

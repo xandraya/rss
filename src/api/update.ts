@@ -14,8 +14,10 @@ import type { FeedItem } from '../types';
 const AGE_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? process.env._AGE_POST_LIMIT! : '1 year';
 const SUB_POST_LIMIT = cluster.worker && cluster.worker!.id !== Number(process.env._WORKER_COUNT)+1 ? Number(process.env._SUB_POST_LIMIT) : 3;
 
-export async function fetchPosts(url: URL, client: HTTPClient): Promise<FeedItem[]> {
+export function fetchPosts(url: URL, client: HTTPClient): Promise<FeedItem[]> {
   return new Promise((resolve, reject) => {
+    let drainable = true;
+
     const optsFP = Object.freeze({
       normalize: true,
       addmeta: true,
@@ -31,19 +33,21 @@ export async function fetchPosts(url: URL, client: HTTPClient): Promise<FeedItem
     });
 
     let items: FeedItem[] = [];
-    const feedparser = new FeedParser(optsFP);
-    feedparser
+    const feedparser = new FeedParser(optsFP)
       .on('error', reject)
       .on('end', () => resolve(items))
-      .on('readable', async function (this: typeof FeedParser) {
+      .on('readable', () => {
         let item: FeedItem;
-        // @ts-ignore
-        while ((item = this.read())) {
+        while ((item = feedparser.read()))
           items.push(item);
-        }
       });
 
-    const cb = (chunk: Buffer) => feedparser.write(chunk);
+    const cb = (chunk: Buffer) => {
+      if (!drainable) {
+        feedparser.once('drain', () => drainable = feedparser.write(chunk));
+      }
+      else drainable = feedparser.write(chunk);
+    }
     client.request(optsReq, cb).then(() => feedparser.end());
   });
 }
@@ -77,6 +81,7 @@ async function handlePOST(req: IncomingMessage, res: ServerResponse, client: HTT
       let postid: string;
       for (let post of await fetchPosts(url, client)) {
         post.image.title = post.image.title || '';
+        post.image.title = post.image.url || '';
 
         // generate id
         postid = hash('sha256', `${feeds[i].feedid}${post.origlink || post.link}`, 'hex').slice(0,16);
